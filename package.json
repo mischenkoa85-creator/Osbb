@@ -1,0 +1,17 @@
+{
+  "name": "osbb-server",
+  "version": "1.0.0",
+  "description": "REST API сервер для управління ОСББ: квартири, мешканці, нарахування, оплати, заявки, оголошення, голосування, показники лічильників",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch src/server.js",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "license": "MIT"
+}
