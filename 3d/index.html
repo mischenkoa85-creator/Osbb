@@ -169,7 +169,7 @@ footer{ margin-top:56px; border-top:1px solid var(--line); }
 @media (max-width: 600px){
   .stage{ aspect-ratio:1/1.1; }
   .kpis{ grid-template-columns:repeat(2, minmax(0,1fr)); }
-  .nav{ display:none; }
+  .nav a{ display:none; }
   .hint{ display:none; }
   .crumb{ top:auto; bottom:12px; }
   .emsPanel{ top:auto; bottom:12px; left:12px; right:12px; width:auto; }
@@ -186,7 +186,8 @@ footer{ margin-top:56px; border-top:1px solid var(--line); }
 .spec tr.flag td:last-child{ padding-right:6px; border-radius:0 6px 6px 0; }
 .srcs{ margin-top:8px; font-size:13px; color:var(--muted); }
 .srcs b{ color:var(--ink); }
-@media (max-width: 600px){ .nav .pick{ display:none; } }
+/* phones: the product picker stays, full width under the wordmark */
+@media (max-width: 600px){ .top-in{ flex-wrap:wrap; } .nav{ width:100%; justify-content:stretch; } .nav .pick{ width:100%; padding-left:0; min-width:0; box-sizing:border-box; } .nav select{ flex:1 1 0; min-width:0; width:100%; max-width:none; padding:10px; font-size:15px; } }
 .stage.night{ background:radial-gradient(120% 90% at 50% 18%, #2A3A4A, #0B141B); }
 </style></head>
 <body></body>
