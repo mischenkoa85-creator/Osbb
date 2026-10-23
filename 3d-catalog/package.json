@@ -1,0 +1,7 @@
+{
+  "name": "esystems-3d-catalog",
+  "private": true,
+  "description": "E-Systems 3D catalog: Bluesun, Elecnova, ZOE and Golen models on one engine",
+  "scripts": { "build": "node build.cjs" },
+  "dependencies": { "esbuild": "0.20.2", "three": "0.160.0" }
+}
