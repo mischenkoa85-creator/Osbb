@@ -146,7 +146,7 @@ function modelsSheet(C, SITE){
   const $ = id => document.getElementById(id);
   const all = SITE.products || [], cat = SITE.catalog || { categories:{}, backup:{} };
   const F = { category:'', brand:'', backup:'', market:'' };
-  const badge = p => p.backup === 'builtin' ? `⚡ ${p.ms ? '≤ ' + p.ms + ' мс' : 'вбудований перехід'}` : p.backup === 'sts' ? (p.stsOpt === 'option' ? 'STS — опція' : 'STS не в комплекті') : p.backup === 'bypass' ? 'Bypass' : p.backup === 'eps' ? 'EPS' : p.backup === 'dc' ? 'потрібен PCS' : p.backup === 'grid' ? 'мережевий PCS' : '';
+  const badge = p => p.backup === 'builtin' ? `⚡ ${p.ms ? '≤ ' + p.ms + ' мс' : 'вбудований перехід'}` : p.backup === 'sts' ? (p.stsOpt === 'option' ? 'STS — опція' : p.stsOpt === 'kit' ? `STS у комплекті${p.ms ? ', ≤ ' + p.ms + ' мс' : ''}` : 'STS не в комплекті') : p.backup === 'bypass' ? 'Bypass' : p.backup === 'eps' ? 'EPS' : p.backup === 'dc' ? 'потрібен PCS' : p.backup === 'grid' ? 'мережевий PCS' : '';
   const num = p => [p.kw ? `${fmtN(p.kw)} кВт` : '', p.kwh ? `${String(p.kwh).replace('.', ',')} кВт·год` : ''].filter(Boolean).join(' · ');
   const groups = [['category', 'Тип', cat.categories], ['brand', 'Бренд', cat.brands || {}], ['backup', 'Резерв', cat.backup], ['market', 'Ринок', { EU:'EU 400 В', US:'US 208–240 В' }]];
   const brands = new Set(all.map(p => p.brand)).size > 1;

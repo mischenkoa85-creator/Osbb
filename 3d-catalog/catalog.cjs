@@ -45,6 +45,9 @@ const CATEGORY = {
   'elecnova-b20ft5015lp-2': 'dccontainer', 'zoe-p5000-2h': 'dccontainer', 'zoe-p6200-2h': 'dccontainer', 'zoe-p3400-2h': 'dccontainer',
   'golen-lbs-2508': 'dccontainer', 'golen-lbs-5016': 'dccontainer',
 };
+// cards whose backup type differs from the brand catalog: the Golen -PS kit is PCS + STS, with the STS in its side cabinet
+// (part of the kit), so it is filtered under «PCS + STS» and marked «STS у комплекті»
+const BACKUP = { 'golen-les-261l130-ps': { backup: 'sts', stsOpt: 'kit' } };
 // Elecnova EPS cabinets use the engine's Bypass scheme; in the menu they get their own label
 const EPS_TYPE = 'Тип: перемикач EPS (≤ 20 с).';
 
@@ -104,6 +107,7 @@ BRANDS.forEach(([brand, mod], bi) => {
     const card = { ...c, brand };
     if (CATEGORY[c.id]) card.category = CATEGORY[c.id];
     if (brand === 'Elecnova' && c.backup === 'bypass') card.backup = 'eps';
+    if (BACKUP[c.id]) Object.assign(card, BACKUP[c.id]);
     if (!categories[card.category]) throw new Error(`${c.id}: category "${card.category}" is not in the common menu`);
     if (card.backup && !backup[card.backup]) throw new Error(`${c.id}: backup "${card.backup}" has no label`);
     cards.push({ card, k: [Object.keys(categories).indexOf(card.category), bi, i] });

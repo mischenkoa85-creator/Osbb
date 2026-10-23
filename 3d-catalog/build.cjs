@@ -21,11 +21,10 @@ fs.writeFileSync(entry,
   "const id = PRODUCTS[location.hash.slice(1)] ? location.hash.slice(1) : SITE.products[0].id;\n" +
   "start(PRODUCTS[id], SITE);\n" +
   "window.addEventListener('hashchange', () => { if (PRODUCTS[location.hash.slice(1)]) location.reload(); });\n");
+const ESBUILD = path.join(__dirname, 'node_modules', '.bin', 'esbuild');
+const bundle = file => execFileSync(ESBUILD, [file, '--bundle', '--minify', '--format=iife', '--charset=utf8', '--legal-comments=none'], { cwd: __dirname, maxBuffer: 256 << 20 }).toString();
 let js;
-try {
-  js = execFileSync(path.join(__dirname, 'node_modules', '.bin', 'esbuild'),
-    [entry, '--bundle', '--minify', '--format=iife', '--charset=utf8', '--legal-comments=none'], { cwd: __dirname, maxBuffer: 256 << 20 }).toString();
-} finally { fs.unlinkSync(entry); }
+try { js = bundle(entry); } finally { fs.unlinkSync(entry); }
 
 // readable message instead of an endless "loading" when WebGL or a script fails; the browser's benign
 // "ResizeObserver loop …" notice is not an error
@@ -55,6 +54,16 @@ for (const [src, dst] of [['sts.src.html', 'sts.html'], ['psc.src.html', 'psc.ht
   const n = pg.split('<nav class="nav"').length - 1;
   if (n !== 1) throw new Error(`${src}: nav matched ${n} times`);
   pg = pg.replace('<nav class="nav"', '<a class="cat-link" href="index.html">← Усі моделі</a><nav class="nav"').replace('</head>', BACK_CSS + '</head>');
+  // the pages import three.js from a CDN (import map + module script): bundle it in, so that they open offline and from
+  // a local folder (file://) like the catalog itself; the module script sits at the end of the page, after the markup it uses
+  const im = pg.match(/<script type="importmap">[\s\S]*?<\/script>\s*/), mod = pg.match(/<script type="module">([\s\S]*?)<\/script>/);
+  if (!im || !mod) throw new Error(`${src}: import map or module script not found`);
+  const tmp = path.join(__dirname, 'engine', `_${dst}.mjs`);
+  fs.writeFileSync(tmp, mod[1].replace(/(from\s+['"])three\/addons\//g, '$1three/examples/jsm/'));
+  let code;
+  try { code = bundle(tmp); } finally { fs.unlinkSync(tmp); }
+  pg = pg.replace(im[0], '').replace(mod[0], () => `<script>${code.replace(/<\/script/gi, '<\\/script')}</script>`);
+  if (/cdn\.jsdelivr|unpkg\.com/.test(pg)) throw new Error(`${dst}: still loads scripts from a CDN`);
   // the source pages are fragments: served as plain files they need their own skeleton
   if (!/^\s*<!doctype/i.test(pg)) pg = '<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">' + BACK_CSS + pg;
   fs.writeFileSync(path.join(outDir, dst), pg);
