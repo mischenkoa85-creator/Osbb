@@ -1,0 +1,1073 @@
+<title>Golen PSC у 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: showroom stage for the 3D model with a parts rail beside it; then datasheet table and the EMS demo */
+:root{
+  --bg:#F2F5F7; --surface:#FFFFFF; --ink:#0F1C26; --muted:#4F6270; --line:#D5E0E6;
+  --primary:#1D6D8C; --accent:#4ABED8; --golen:#13808F; --amber:#E39B2D; --alarm:#C8462B; --ok:#2E9A6A;
+  --stage-a:#EEF3F6; --stage-b:#D3DFE6; --pin:#0F1C26; --pin-fg:#FFFFFF; --chip:#E7EEF2;
+  --f-display:'Manrope','Segoe UI',system-ui,sans-serif; --f-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A141B; --surface:#112029; --ink:#E4EDF1; --muted:#98AEBA; --line:#21384A;
+    --primary:#4ABED8; --accent:#7FD6EA; --golen:#3FB3C2; --amber:#F0B04A; --alarm:#E86A4E; --ok:#4CC28C;
+    --stage-a:#16293448; --stage-b:#0A141B; --pin:#E4EDF1; --pin-fg:#0A141B; --chip:#18303D; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A141B; --surface:#112029; --ink:#E4EDF1; --muted:#98AEBA; --line:#21384A;
+  --primary:#4ABED8; --accent:#7FD6EA; --golen:#3FB3C2; --amber:#F0B04A; --alarm:#E86A4E; --ok:#4CC28C;
+  --stage-a:#16293448; --stage-b:#0A141B; --pin:#E4EDF1; --pin-fg:#0A141B; --chip:#18303D; color-scheme:dark;
+}
+*{ box-sizing:border-box; }
+[hidden]{ display:none !important; }
+body{ background:var(--bg); color:var(--ink); font-family:var(--f-display); font-size:15px; line-height:1.5; }
+.wrap{ max-width:1240px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+h1,h2,h3{ text-wrap:balance; margin:0; }
+a{ color:var(--primary); }
+button{ font-family:inherit; }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+.top{ position:sticky; top:env(safe-area-inset-top, 0px); z-index:20; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+body::before{ content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top, 0px); z-index:30; background:var(--bg); }
+.top-in{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding-block:12px; }
+.wm{ display:flex; flex-direction:column; line-height:1; }
+.wm b{ font-weight:800; font-size:20px; letter-spacing:.14em; }
+.wm b i{ font-style:normal; color:var(--accent); }
+.wm span{ font-size:8px; letter-spacing:.24em; margin-top:5px; font-weight:600; color:var(--muted); }
+.nav{ display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+.nav a{ text-decoration:none; color:var(--ink); font-weight:600; font-size:14px; padding:8px 12px; border-radius:8px; }
+.nav a:hover{ background:var(--chip); }
+
+.hero{ padding-block:28px 12px; }
+.intro{ display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:12px 40px; align-items:end; margin-bottom:20px; }
+.eyebrow{ font-family:var(--f-mono); font-size:12px; letter-spacing:.14em; color:var(--golen); font-weight:600; grid-column:1/-1; }
+h1{ font-size:clamp(30px, 4.2vw, 50px); line-height:1.04; font-weight:800; letter-spacing:-.02em; }
+.lead{ margin:0; color:var(--muted); font-size:16px; max-width:58ch; }
+.chips{ list-style:none; padding:0; margin:6px 0 0; display:flex; flex-wrap:wrap; gap:8px; grid-column:1/-1; }
+.chips li{ background:var(--chip); border-radius:999px; padding:6px 12px; font-size:13.5px; color:var(--muted); }
+.chips b{ color:var(--ink); font-family:var(--f-mono); font-weight:600; }
+
+.viewer{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:18px; align-items:start; }
+.stage-col{ min-width:0; }
+.stage{ position:relative; aspect-ratio:16/10.5; max-height:74vh; width:100%; border-radius:18px; overflow:hidden; background:radial-gradient(120% 90% at 50% 18%, var(--stage-a), var(--stage-b)); border:1px solid var(--line); touch-action:none; }
+.stage.night{ background:radial-gradient(120% 90% at 50% 18%, #2A3A4A, #0B141B); }
+.stage canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; cursor:grab; }
+.stage canvas.hot{ cursor:pointer; }
+.pins{ position:absolute; inset:0; pointer-events:none; }
+.pin{ position:absolute; transform:translate(-50%,-50%); pointer-events:auto; background:none; border:0; padding:0; cursor:pointer; transition:opacity .25s; }
+.pin .n{ display:block; width:26px; height:26px; border-radius:50%; background:var(--pin); color:var(--pin-fg); font:600 12px/26px var(--f-mono); text-align:center; box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent); }
+.pin .t{ position:absolute; left:32px; top:50%; background:var(--surface); color:var(--ink); border:1px solid var(--line); font-size:12.5px; font-weight:700; padding:4px 9px; border-radius:7px; white-space:nowrap; opacity:0; transform:translate(-4px,-50%); transition:opacity .2s, transform .2s; pointer-events:none; }
+.pin:hover .t, .pin.active .t, .pin.lab .t, .lab-on .pin .t{ opacity:1; transform:translate(0,-50%); }
+.pin.active .n{ background:var(--golen); color:#fff; }
+.pin.left .t{ left:auto; right:32px; transform:translate(4px,-50%); }
+.pin.fire .n{ background:var(--alarm); color:#fff; box-shadow:0 0 0 4px color-mix(in srgb, var(--alarm) 30%, transparent); }
+.seg{ position:absolute; left:12px; top:12px; display:flex; background:color-mix(in srgb, var(--surface) 92%, transparent); border:1px solid var(--line); border-radius:11px; padding:3px; gap:2px; z-index:2; }
+.seg button{ border:0; background:none; color:var(--muted); font-weight:700; font-size:13px; padding:7px 11px; border-radius:8px; cursor:pointer; }
+.seg button.on{ background:var(--ink); color:var(--bg); }
+.crumb{ position:absolute; left:12px; top:58px; z-index:2; font-size:12.5px; font-weight:600; color:var(--muted); background:color-mix(in srgb, var(--surface) 85%, transparent); padding:5px 10px; border-radius:8px; }
+.crumb b{ color:var(--ink); }
+.crumb.alarm{ background:var(--alarm); color:#fff; }
+.crumb.alarm b{ color:#fff; }
+.status{ position:absolute; right:12px; top:12px; z-index:2; background:color-mix(in srgb, var(--surface) 92%, transparent); border:1px solid var(--line); border-radius:11px; padding:7px 11px; font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:8px; max-width:calc(100% - 24px); }
+.dot{ width:9px; height:9px; border-radius:50%; background:var(--ok); flex:none; }
+.dot.off{ background:var(--alarm); }
+.dot.blink{ background:var(--alarm); animation:blink .5s steps(2) infinite; }
+@keyframes blink{ 50%{ opacity:.2; } }
+.emsPanel{ position:absolute; right:12px; top:58px; z-index:3; width:236px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px; font-size:13px; box-shadow:0 10px 30px rgba(10,20,27,.14); }
+.emsPanel .h{ display:flex; justify-content:space-between; align-items:center; font-weight:800; margin-bottom:8px; }
+.emsPanel .soc{ height:8px; border-radius:6px; background:var(--chip); overflow:hidden; margin:2px 0 10px; }
+.emsPanel .soc i{ display:block; height:100%; width:76%; background:var(--golen); }
+.emsPanel dl{ display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 10px; margin:0 0 8px; }
+.emsPanel dt{ color:var(--muted); }
+.emsPanel dd{ margin:0; text-align:right; font-family:var(--f-mono); }
+.hint{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%); font-size:12px; color:var(--muted); background:color-mix(in srgb, var(--surface) 85%, transparent); padding:5px 10px; border-radius:999px; white-space:nowrap; transition:opacity .6s; z-index:2; }
+.loading{ position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); font-family:var(--f-mono); font-size:13px; }
+.bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:12px; }
+.btn{ border:1px solid var(--line); background:var(--surface); color:var(--ink); font-weight:700; font-size:14px; padding:9px 14px; border-radius:10px; cursor:pointer; min-height:42px; }
+.btn:hover{ border-color:var(--primary); }
+.btn.primary{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.btn[aria-pressed="true"]{ border-color:var(--primary); color:var(--primary); }
+.btn.firebtn[aria-pressed="true"]{ border-color:var(--alarm); color:var(--alarm); }
+.btn.sm{ min-height:34px; padding:6px 11px; font-size:13px; }
+.cap{ margin-top:10px; font-size:12.5px; color:var(--muted); }
+
+.rail{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px; min-width:0; }
+.rail-h{ font-family:var(--f-mono); font-size:11.5px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase; margin-bottom:10px; }
+.parts{ list-style:none; margin:0 0 14px; padding:0; display:flex; flex-direction:column; gap:2px; }
+.parts .row{ width:100%; display:flex; align-items:center; gap:10px; text-align:left; background:none; border:0; border-radius:9px; padding:8px; cursor:pointer; color:var(--ink); font-weight:600; font-size:14px; }
+.parts .row:hover, .parts .row.on{ background:var(--chip); }
+.parts .k{ width:22px; height:22px; border-radius:50%; flex:none; background:var(--ink); color:var(--bg); font:600 11px/22px var(--f-mono); text-align:center; }
+.parts .row.on .k{ background:var(--golen); color:#fff; }
+.mods{ display:flex; gap:6px; padding:0 8px 6px 40px; flex-wrap:wrap; }
+.mods button{ border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:8px; font:600 12px var(--f-mono); padding:5px 8px; cursor:pointer; }
+.mods button.on{ background:var(--golen); border-color:var(--golen); color:#fff; }
+.detail{ border-top:1px solid var(--line); padding-top:14px; }
+.detail h3{ font-size:17px; margin-bottom:6px; }
+.detail p{ margin:0 0 10px; color:var(--muted); font-size:14px; }
+.kv{ display:grid; grid-template-columns:auto minmax(0,1fr); gap:5px 12px; margin:0 0 12px; font-size:13.5px; }
+.kv dt{ color:var(--muted); }
+.kv dd{ margin:0; font-family:var(--f-mono); font-weight:500; text-align:right; }
+.acts{ display:flex; flex-wrap:wrap; gap:6px; }
+.small{ font-size:12px; color:var(--muted); margin-top:10px; }
+
+section.block{ padding-block:56px 8px; }
+.sec-h{ display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:12px 32px; margin-bottom:22px; }
+.sec-h h2{ font-size:clamp(24px, 3vw, 34px); font-weight:800; letter-spacing:-.015em; }
+.sec-h p{ margin:0; color:var(--muted); max-width:60ch; }
+.specs{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:18px; }
+.spec{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; min-width:0; }
+.spec h3{ font-size:13px; font-family:var(--f-mono); letter-spacing:.12em; text-transform:uppercase; color:var(--golen); margin-bottom:10px; font-weight:600; }
+.spec table{ width:100%; border-collapse:collapse; font-size:14px; }
+.spec td{ padding:7px 0; border-top:1px solid var(--line); vertical-align:top; }
+.spec tr:first-child td{ border-top:0; }
+.spec td:last-child{ text-align:right; font-family:var(--f-mono); font-weight:500; padding-left:12px; }
+.spec td:first-child{ color:var(--muted); }
+.cert{ margin-top:14px; font-size:13px; color:var(--muted); }
+
+.ems{ display:grid; grid-template-columns:minmax(0,0.85fr) minmax(0,1.6fr); gap:22px; align-items:start; }
+.feat{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px; }
+.feat li{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+.feat b{ display:block; font-size:15px; margin-bottom:2px; }
+.feat span{ color:var(--muted); font-size:14px; }
+.dash{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px; min-width:0; }
+.dash-h{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+.dash-h b{ font-size:16px; }
+.tag{ font-family:var(--f-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--amber); border:1px solid currentColor; border-radius:6px; padding:3px 7px; font-weight:500; }
+.kpis{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+.kpi{ background:var(--bg); border-radius:12px; padding:10px 12px; min-width:0; }
+.kpi b{ display:block; font-family:var(--f-mono); font-size:20px; font-weight:600; letter-spacing:-.01em; white-space:nowrap; }
+.kpi span{ font-size:12px; color:var(--muted); }
+.chart{ overflow-x:auto; }
+.chart svg{ display:block; width:100%; min-width:560px; height:auto; }
+.legend{ display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12.5px; color:var(--muted); margin-top:8px; }
+.legend i{ display:inline-block; width:14px; height:3px; border-radius:2px; vertical-align:middle; margin-right:6px; }
+.note{ font-size:12.5px; color:var(--muted); margin-top:10px; }
+
+footer{ margin-top:56px; border-top:1px solid var(--line); }
+.foot{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:18px 40px; padding-block:26px 34px; font-size:14px; color:var(--muted); }
+.foot b{ color:var(--ink); }
+.sel{ user-select:all; font-family:var(--f-mono); color:var(--ink); }
+
+.video-mode .top, .video-mode .intro, .video-mode .rail, .video-mode .bar, .video-mode .cap, .video-mode section.block, .video-mode footer, .video-mode .hint, .video-mode .seg, .video-mode .crumb, .video-mode .status{ display:none !important; }
+.video-mode .hero{ padding:0; max-width:none; }
+.video-mode .viewer{ display:block; }
+.video-mode .stage{ width:1280px; height:720px; max-height:none; aspect-ratio:auto; border-radius:0; border:0; }
+.vtitle, .vlogo{ display:none; }
+.video-mode .vtitle{ display:block; position:absolute; left:28px; bottom:26px; z-index:3; color:var(--ink); max-width:820px; background:color-mix(in srgb, var(--bg) 84%, transparent); padding:12px 16px; border-radius:12px; }
+.vtitle .e{ font-family:var(--f-mono); font-size:13px; letter-spacing:.16em; color:var(--golen); font-weight:600; }
+.vtitle .h{ font-size:34px; font-weight:800; letter-spacing:-.015em; line-height:1.1; margin-top:4px; }
+.vtitle .s{ font-size:16px; color:var(--muted); margin-top:4px; }
+.video-mode .vlogo{ display:flex; position:absolute; right:28px; top:22px; z-index:3; background:color-mix(in srgb, var(--bg) 84%, transparent); padding:10px 14px; border-radius:10px; }
+.video-mode .emsPanel{ top:96px; right:40px; }
+
+@media (max-width: 960px){
+  .viewer{ grid-template-columns:minmax(0,1fr); }
+  .intro{ grid-template-columns:minmax(0,1fr); }
+  .specs{ grid-template-columns:minmax(0,1fr); }
+  .ems{ grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width: 600px){
+  .stage{ aspect-ratio:1/1.1; }
+  .kpis{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .nav{ display:none; }
+  .hint{ display:none; }
+  .crumb{ top:auto; bottom:12px; }
+  .emsPanel{ top:auto; bottom:12px; left:12px; right:12px; width:auto; }
+  .status{ top:auto; bottom:52px; left:12px; right:12px; }
+}
+@media (prefers-reduced-motion: reduce){ .pin, .pin .t, .hint{ transition:none; } .dot.blink{ animation:none; } }
+
+/* single-line diagram */
+.sld{ overflow-x:auto; }
+.sld svg{ display:block; width:100%; min-width:520px; height:auto; }
+.sld .ln{ fill:none; stroke:var(--line); stroke-width:3; stroke-linecap:round; }
+.sld .ln.on{ stroke:var(--golen); stroke-dasharray:9 7; animation:flow 1.1s linear infinite; }
+.sld .ln.on.rev{ animation-direction:reverse; }
+.sld .ln.dead{ stroke:var(--alarm); stroke-dasharray:3 6; }
+.sld .bx{ fill:var(--surface); stroke:var(--ink); stroke-width:1.6; }
+.sld .bx.hot{ stroke:var(--golen); stroke-width:2.4; }
+.sld .bx.bad{ stroke:var(--alarm); }
+.sld .bx.mute{ stroke:var(--line); }
+.sld text{ font-family:var(--f-mono); font-size:12px; fill:var(--ink); }
+.sld text.m{ fill:var(--muted); font-size:11px; }
+.sld text.b{ font-family:var(--f-display); font-weight:800; font-size:13px; }
+.sld .node{ fill:var(--ink); }
+@keyframes flow{ to{ stroke-dashoffset:-32; } }
+@media (prefers-reduced-motion: reduce){ .sld .ln.on{ animation:none; } }
+.steps{ counter-reset:s; }
+.steps li{ position:relative; padding-left:52px; }
+.steps li::before{ counter-increment:s; content:counter(s); position:absolute; left:16px; top:15px; width:24px; height:24px; border-radius:50%; background:var(--ink); color:var(--bg); font:600 12px/24px var(--f-mono); text-align:center; }
+.specs.two{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+@media (max-width: 960px){ .specs.two{ grid-template-columns:minmax(0,1fr); } }
+@media (max-width: 600px){ .seg .xl{ display:none; } }
+
+.desc{ margin-top:12px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px 18px; }
+.desc h3{ font-size:17px; margin:0 0 6px; }
+.desc p{ margin:0 0 8px; color:var(--muted); font-size:14.5px; max-width:75ch; }
+.desc p:last-child{ margin-bottom:0; }
+.parts .row.sub{ padding-left:22px; font-weight:500; font-size:13.5px; }
+.parts .row.sub .k{ width:auto; min-width:22px; padding:0 5px; border-radius:11px; font-size:10.5px; }
+.sld .ln.live{ stroke:var(--golen); opacity:.45; }
+.sld .sw{ cursor:pointer; }
+.sld .sw .hit{ fill:transparent; }
+.sld .sw:hover .hit, .sld .sw:focus-visible .hit{ fill:color-mix(in srgb, var(--accent) 22%, transparent); }
+.sld .sw:focus{ outline:none; }
+.sld .sw .blade{ stroke:var(--ink); stroke-width:3.2; stroke-linecap:round; }
+.sld .sw.open .blade{ stroke:var(--alarm); }
+.sld .sw .tm{ fill:var(--surface); stroke:var(--ink); stroke-width:1.6; }
+.sld .sw text{ font-weight:600; }
+.sld .stsb{ stroke:var(--ink); stroke-width:2.6; stroke-linecap:round; }
+.sld .stsb.open{ stroke:var(--alarm); }
+
+/* PSC page additions */
+.stage.eve{ background:radial-gradient(120% 90% at 50% 18%, #F6E3CF, #B9A7A4); }
+.stage.night .crumb, .stage.night .hint{ background:color-mix(in srgb, #0B141B 70%, transparent); color:#C9D6DE; }
+.stage.night .crumb b{ color:#fff; }
+.spec table.cmp td{ text-align:right; font-family:var(--f-mono); font-weight:500; padding-left:10px; }
+.spec table.cmp td:first-child{ text-align:left; font-family:var(--f-display); font-weight:400; color:var(--muted); padding-left:0; }
+.spec table.cmp th{ text-align:right; font:600 12px var(--f-mono); color:var(--ink); padding:0 0 8px 10px; }
+.spec table.cmp th:first-child{ text-align:left; padding-left:0; color:var(--muted); font-weight:500; }
+.spec table.cmp tr.grp td{ font:600 11px var(--f-mono); letter-spacing:.12em; text-transform:uppercase; color:var(--golen); padding-top:14px; text-align:left; }
+.uses{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+.uses li{ background:var(--bg); border-radius:12px; padding:12px 14px; }
+.uses b{ display:block; font-size:15px; margin-bottom:4px; }
+.uses span{ display:block; color:var(--muted); font-size:13.5px; }
+.uses i{ font-style:normal; font-family:var(--f-mono); color:var(--ink); }
+.specs.wide{ grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); }
+@media (max-width: 960px){ .specs.wide{ grid-template-columns:minmax(0,1fr); } }
+.tblwrap{ overflow-x:auto; }
+.sld .bx.blk{ fill:none; stroke:var(--line); stroke-dasharray:5 5; }
+</style>
+<header class="top"><div class="wrap top-in">
+  <div class="wm"><b>E<i>-</i>SYSTEMS</b><span>ENERGY STORAGE &amp; POWER SOLUTIONS</span></div>
+  <nav class="nav" aria-label="Розділи"><a href="#viewer">3D-модель</a><a href="#scheme">Як працює</a><a href="#specs">Дані</a></nav>
+</div></header>
+
+<main>
+<section class="hero wrap" id="viewer">
+  <div class="intro">
+    <div class="eyebrow">GOLEN POWER · ПОСТАЧАННЯ ТА ІНТЕГРАЦІЯ E-SYSTEMS</div>
+    <h1>Сонце, накопичувач і швидка зарядка в одному блоці</h1>
+    <p class="lead">Golen LES-241L120-PSC — зарядна станція на 120 кВт із власним накопичувачем 241 кВт·год і входом для сонячної станції. Її ставлять там, де ввід не дозволяє швидку зарядку: батарея добирає потужність, а коли мережа зникає, станція працює автономно.</p>
+    <ul class="chips">
+      <li>зарядка <b>120</b> кВт</li><li><b>2</b> пістолети до <b>400</b> А</li><li>накопичувач <b>241</b> кВт·год</li><li>СЕС <b>60–240</b> кВт</li><li>перехід <b>≤ 20</b> мс</li><li><b>IP55</b></li>
+    </ul>
+  </div>
+
+  <div class="viewer">
+    <div class="stage-col">
+      <div class="stage" id="stage">
+        <canvas id="c" aria-label="3D-модель Golen LES-241L120-PSC на об'єкті"></canvas>
+        <div class="seg" role="tablist" aria-label="Час доби">
+          <button id="tDay" class="on" role="tab" aria-selected="true">День</button>
+          <button id="tEve" role="tab" aria-selected="false">Вечір<span class="xl"> · пік</span></button>
+          <button id="tNight" role="tab" aria-selected="false">Ніч</button>
+        </div>
+        <div class="crumb" id="crumb"><b>LES-241L120-PSC</b></div>
+        <div class="status" id="status"><span class="dot" id="sdot"></span><span id="stext">Сонце заряджає авто й батарею</span></div>
+        <div class="hint" id="hint">Натисніть на обладнання або номер · потягніть, щоб обертати</div>
+        <div class="loading" id="loading">Завантаження 3D-моделі…</div>
+      </div>
+      <div class="bar">
+        <button class="btn firebtn" id="bOut" aria-pressed="false">Відключення мережі</button>
+        <button class="btn" id="bCar1" aria-pressed="true">Авто 1</button>
+        <button class="btn" id="bCar2" aria-pressed="false">Авто 2</button>
+        <button class="btn primary" id="bDoor">Відкрити бокову шафу</button>
+        <button class="btn" id="bSpin" aria-pressed="true">Обертання</button>
+        <button class="btn" id="bReset">Скинути</button>
+      </div>
+      <div class="desc" id="desc" aria-live="polite"><h3 id="descH"></h3><div id="descB"></div></div>
+      <div class="cap" id="cap">Вигляд і компонування — за зображеннями Golen: рама-скід, бокова шафа, шафа накопичення, зарядна станція; пропорції рами — за тими ж зображеннями. Внутрішні вузли шаф, навіс СЕС, будівля й автомобілі показані умовно.</div>
+    </div>
+    <aside class="rail" aria-live="polite">
+      <div class="rail-h" id="railH">Склад · номери на обладнанні</div>
+      <ol class="parts" id="parts"></ol>
+      <div class="detail" id="detail"></div>
+    </aside>
+  </div>
+</section>
+
+<section class="block wrap" id="scheme">
+  <div class="sec-h"><h2>Як працює станція</h2><p>Режими за описом Golen. Схема справа показує, куди йде енергія в поточному режимі 3D-моделі; на «Мережа», «Авто 1» і «Авто 2» можна натискати.</p></div>
+  <div class="ems">
+    <ol class="feat steps">
+      <li><b>Сонце — напряму</b><span>СЕС 60–240 кВт підключається постійним струмом, без окремого інвертора. Вдень сонце заряджає авто й батарею.</span></li>
+      <li><b>Потужність понад ввід</b><span>Батарея 241 кВт·год добирає потужність для зарядки 120 кВт там, де ввід не дозволяє поставити швидку станцію.</span></li>
+      <li><b>Пік і нічний тариф</b><span>EMS заряджає батарею вночі й віддає енергію в пік — зарядка не перевантажує ввід і коштує дешевше.</span></li>
+      <li><b>Без мережі</b><span>STS відключає мережу за час до 20 мс. Зарядка й резервне навантаження 220/380 В працюють від батареї та сонця.</span></li>
+      <li><b>Оплата і керування</b><span>Оплата карткою RFID, банківською карткою або через POS-термінал. OCPP — для платформи зарядки, Modbus TCP/RTU — для EMS E-Systems.</span></li>
+    </ol>
+    <div class="dash">
+      <div class="dash-h"><b id="sldTitle">Потоки енергії</b><span class="tag" id="sldTag">день</span></div>
+      <div class="sld" id="sld"></div>
+      <div class="note" id="sldNote">Анімована лінія — потік енергії, бліда — напруга без потоку, червоний пунктир — мережа без напруги. Схема показує потоки між вузлами; внутрішню схему з'єднань Golen не публікує.</div>
+    </div>
+  </div>
+</section>
+
+<section class="block wrap" id="specs">
+  <div class="sec-h"><h2>Дані Golen</h2><p>За паспортом Golen «Integrated PV-ESS-EV Charging System» з сайту golen-power.com. Для більших станцій — версія LES-482L240-PSC на 4 пістолети.</p></div>
+  <div class="specs wide">
+    <div class="spec"><h3>Технічні дані</h3><div class="tblwrap"><table class="cmp">
+      <tr><th></th><th>LES-241L120-PSC</th><th>LES-482L240-PSC</th></tr>
+      <tr class="grp"><td colspan="3">Мережа</td></tr>
+      <tr><td>Напруга, частота</td><td colspan="2">3W/N/PE, 230/400 В, 50 Гц</td></tr>
+      <tr class="grp"><td colspan="3">СЕС</td></tr>
+      <tr><td>Потужність входу</td><td>60–240 кВт</td><td>60–480 кВт</td></tr>
+      <tr><td>Напруга входу</td><td colspan="2">200–660 В, пряме DC-підключення</td></tr>
+      <tr class="grp"><td colspan="3">Накопичувач</td></tr>
+      <tr><td>Енергія</td><td>241 кВт·год</td><td>482 кВт·год</td></tr>
+      <tr><td>Конфігурація</td><td>1P240S</td><td>2P240S</td></tr>
+      <tr><td>Режим, охолодження</td><td colspan="2">0,5C, рідинне</td></tr>
+      <tr class="grp"><td colspan="3">Зарядка DC</td></tr>
+      <tr><td>Пістолети</td><td>2</td><td>4</td></tr>
+      <tr><td>Потужність з мережею / автономно</td><td>120 / 120 кВт</td><td>240 / 240 кВт</td></tr>
+      <tr><td>Струм пістолета</td><td colspan="2">до 400 А</td></tr>
+      <tr><td>Вихідна напруга</td><td colspan="2">150–1000 В</td></tr>
+      <tr><td>Постійна потужність</td><td colspan="2">300–1000 В</td></tr>
+      <tr><td>Оплата</td><td colspan="2">RFID, банківська картка, POS</td></tr>
+      <tr><td>Зв'язок</td><td colspan="2">OCPP, Modbus TCP/RTU</td></tr>
+      <tr class="grp"><td colspan="3">Загальні</td></tr>
+      <tr><td>Перехід на автономну роботу</td><td colspan="2">STS, до 20 мс</td></tr>
+      <tr><td>Пожежогасіння</td><td colspan="2">аерозоль + вода</td></tr>
+      <tr><td>Температура</td><td colspan="2">−20…+55 °C, вище 45 °C — зниження потужності</td></tr>
+      <tr><td>Висота</td><td colspan="2">до 4000 м, вище 2000 м — зниження потужності</td></tr>
+      <tr><td>Шум, ЕМС</td><td colspan="2">≤ 75 дБ, клас A</td></tr>
+      <tr><td>Захист</td><td colspan="2">IP55</td></tr>
+      <tr><td>Маса</td><td>≈ 3,5 т</td><td>≈ 6,5 т</td></tr>
+      <tr><td>Габарити Ш × Г × В</td><td>2300 × 1500 × 2700 мм</td><td>6000 × 1600 × 2700 мм</td></tr>
+    </table></div></div>
+    <div class="spec"><h3>Де застосовувати</h3>
+      <ul class="uses">
+        <li><b>Приватний будинок</b><span>1 блок · 2 місця зарядки · <i>2 × 120 кВт</i></span></li>
+        <li><b>АЗС</b><span>2 блоки · 4–8 місць · <i>4 × 120 кВт</i></span></li>
+        <li><b>Зарядний хаб</b><span>від 4 блоків · від 8 місць · <i>8 × 120 кВт</i></span></li>
+      </ul>
+      <p class="cert">Рекомендації конфігурацій — з паспорта Golen. Сертифікація зарядки: IEC 61851-1, EN IEC 61851-21-2, DIN SPEC 70121/70122; накопичувача: EN 50549-1/-10, UN38.3.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap foot">
+  <div><b>ТОВ «ЕСІСТЕМС ЕНЕРДЖІ»</b> · ЄДРПОУ 45650361<br>49022, м. Дніпро, вул. Сонячна Набережна, 124</div>
+  <div>Відділ продажів: <b>Костянтин Лощинов</b><br>Тел.: <span class="sel">+38 (099) 841-78-08</span> · <span class="sel">info@esystems.energy</span></div>
+</div></footer>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = id => document.getElementById(id);
+const stage = $('stage'), canvas = $('c');
+
+/* ================= renderer / scene ================= */
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environment = envTex;
+const camera = new THREE.PerspectiveCamera(30, 1.6, 0.05, 200);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.minDistance = 0.8; controls.maxDistance = 24;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.autoRotateSpeed = 0.6;
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a9aa5, 0.6); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+sun.position.set(4, 8, 6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-12, right:12, top:12, bottom:-12, near:1, far:40 });
+sun.shadow.bias = -0.0004; scene.add(sun);
+const fill = new THREE.DirectionalLight(0xdfefff, 0.5); fill.position.set(-5, 3, -2); scene.add(fill);
+const frontL = new THREE.DirectionalLight(0xffffff, 0.35); frontL.position.set(1, 2, 6); scene.add(frontL);
+
+/* ================= helpers & materials ================= */
+const V = (x,y,z) => new THREE.Vector3(x,y,z);
+const std = (color, o={}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness:0.55, metalness:0.08 }, o));
+function box(w,h,d,mat,x=0,y=0,z=0){ const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; return m; }
+function cyl(r,h,mat,x=0,y=0,z=0,seg=28){ const m = new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg), mat); m.position.set(x,y,z); m.castShadow = true; return m; }
+function plane(w,h,mat,x,y,z){ const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h), mat); m.position.set(x,y,z); return m; }
+function canvasTex(w,h,draw){ const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); draw(g,w,h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }
+const texPerfA = canvasTex(256,256,(g,w,h)=>{ g.fillStyle='#2b3239'; g.fillRect(0,0,w,h); g.fillStyle='#0d1216'; for(let y=6;y<h;y+=10){ for(let x=(y/10)%2?11:6;x<w;x+=10){ g.beginPath(); g.arc(x,y,3.2,0,Math.PI*2); g.fill(); } } });
+const texPerfL = canvasTex(256,256,(g,w,h)=>{ g.fillStyle='#C9CFD3'; g.fillRect(0,0,w,h); g.fillStyle='#7C868D'; for(let y=6;y<h;y+=11){ for(let x=(y/11)%2?11:5;x<w;x+=11){ g.beginPath(); g.arc(x,y,2.6,0,Math.PI*2); g.fill(); } } });
+const perfTex = (rx, ry, base=texPerfA) => { const t = base.clone(); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.needsUpdate = true; return t; };
+const texLogo = canvasTex(512,128,(g)=>{ g.lineWidth=10; g.strokeStyle='#13808F'; g.beginPath(); g.arc(64,64,44,0,Math.PI*2); g.stroke(); g.fillStyle='#E39B2D'; g.beginPath(); g.moveTo(70,24); g.lineTo(46,70); g.lineTo(64,70); g.lineTo(56,104); g.lineTo(84,56); g.lineTo(66,56); g.closePath(); g.fill(); g.fillStyle='#13808F'; g.font='800 78px Manrope, Arial, sans-serif'; g.textBaseline='middle'; g.fillText('GOLEN',128,68); });
+const texWarn = canvasTex(128,112,(g)=>{ g.fillStyle='#F2C230'; g.strokeStyle='#111'; g.lineWidth=8; g.beginPath(); g.moveTo(64,8); g.lineTo(122,106); g.lineTo(6,106); g.closePath(); g.fill(); g.stroke(); g.fillStyle='#111'; g.beginPath(); g.moveTo(70,34); g.lineTo(50,72); g.lineTo(64,72); g.lineTo(56,98); g.lineTo(80,60); g.lineTo(66,60); g.closePath(); g.fill(); });
+const tagCache = {};
+const texTag = (txt) => tagCache[txt] || (tagCache[txt] = canvasTex(256,64,(g,w,h)=>{ g.fillStyle='#F4F6F7'; g.fillRect(0,0,w,h); g.fillStyle='#14202A'; g.font='700 30px Arial, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(txt,w/2,h/2+1); }));
+const texDc = canvasTex(256,64,(g,w,h)=>{ g.fillStyle='#2A3138'; g.fillRect(0,0,w,h); g.fillStyle='#E4EDF1'; g.font='700 30px Arial, sans-serif'; g.textBaseline='middle'; g.fillText('DC/DC',14,h/2+1); });
+const texScreen = (l1, l2, col) => canvasTex(256,112,(g,w,h)=>{ g.fillStyle='#0B2730'; g.fillRect(0,0,w,h); g.fillStyle='#7FD6EA'; g.font='700 26px Arial, sans-serif'; g.fillText(l1,14,40); g.fillStyle=col; g.font='700 28px Arial, sans-serif'; g.fillText(l2,14,86); });
+const texCtrlOn = texScreen('STS', 'МЕРЕЖА', '#4CC28C'), texCtrlOff = texScreen('STS', 'АВТОНОМНО', '#F0B04A');
+const texPcs = texScreen('PCS', '120 кВт', '#4CC28C');
+const texPanel = canvasTex(256,512,(g,w,h)=>{ g.fillStyle='#16233A'; g.fillRect(0,0,w,h); g.strokeStyle='#3E5576'; g.lineWidth=2; for (let x=0;x<=w;x+=w/6){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,h); g.stroke(); } for (let y=0;y<=h;y+=h/12){ g.beginPath(); g.moveTo(0,y); g.lineTo(w,y); g.stroke(); } g.strokeStyle='#C9D0D4'; g.lineWidth=8; g.strokeRect(0,0,w,h); });
+const texOval = canvasTex(64,40,(g,w,h)=>{ g.fillStyle='#3B4248'; g.beginPath(); g.ellipse(w/2,h/2,w/2-3,h/2-4,0,0,Math.PI*2); g.fill(); g.fillStyle='#14191D'; g.beginPath(); g.ellipse(w/2,h/2,w/2-9,h/2-9,0,0,Math.PI*2); g.fill(); });
+const texSign = canvasTex(1024,200,(g,w,h)=>{ g.fillStyle='#F4F6F7'; g.fillRect(0,0,w,h); g.save(); g.translate(16,6); g.scale(0.62,0.62); g.lineWidth=10; g.strokeStyle='#13808F'; g.beginPath(); g.arc(64,64,44,0,Math.PI*2); g.stroke(); g.fillStyle='#E39B2D'; g.beginPath(); g.moveTo(70,24); g.lineTo(46,70); g.lineTo(64,70); g.lineTo(56,104); g.lineTo(84,56); g.lineTo(66,56); g.closePath(); g.fill(); g.fillStyle='#13808F'; g.font='800 78px Manrope, Arial, sans-serif'; g.textBaseline='middle'; g.fillText('GOLEN',128,68); g.restore(); g.fillStyle='#2A3540'; g.font='800 70px Manrope, Arial, sans-serif'; g.textBaseline='middle'; g.fillText('PV-ESS-Charging System', 40, 140); });
+const texRfid = canvasTex(96,96,(g,w,h)=>{ g.fillStyle='#2A3138'; g.fillRect(0,0,w,h); g.strokeStyle='#7FD6EA'; g.lineWidth=4; [14,24,34].forEach(r => { g.beginPath(); g.arc(30,48,r,-0.7,0.7); g.stroke(); }); g.fillStyle='#E4EDF1'; g.fillRect(56,30,26,36); });
+const texEV = canvasTex(256,256,(g,w,h)=>{ g.clearRect(0,0,w,h); g.strokeStyle='rgba(255,255,255,0.92)'; g.lineWidth=12; g.strokeRect(20,20,w-40,h-40); g.fillStyle='rgba(46,154,106,0.9)'; g.font='800 96px Manrope, Arial, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('EV',w/2,h/2-18); g.fillStyle='rgba(255,255,255,0.92)'; g.beginPath(); g.moveTo(140,150); g.lineTo(108,198); g.lineTo(128,198); g.lineTo(116,236); g.lineTo(152,184); g.lineTo(132,184); g.closePath(); g.fill(); });
+const texShop = canvasTex(768,128,(g,w,h)=>{ g.fillStyle='#1F2C36'; g.fillRect(0,0,w,h); g.fillStyle='#F0B04A'; g.font='800 64px Manrope, Arial, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('МАГАЗИН · КАВА', w/2, h/2+3); });
+// charger screen, redrawn on state change
+const chgCanvas = document.createElement('canvas'); chgCanvas.width = 256; chgCanvas.height = 320;
+const chgCtx = chgCanvas.getContext('2d'); const chgTex = new THREE.CanvasTexture(chgCanvas); chgTex.colorSpace = THREE.SRGBColorSpace;
+
+const M = {
+  shell: std(0xEDF1F3, { roughness:0.5 }), shellIn: std(0xD9E0E4, { roughness:0.7, side:THREE.DoubleSide }),
+  roof: std(0xE1E7EA, { roughness:0.5 }), plinthL: std(0xC3CACF, { roughness:0.6, metalness:0.2 }),
+  door: std(0xF3F6F7, { roughness:0.45 }), doorIn: std(0xDDE3E6, { roughness:0.6 }), frame: std(0xC9D2D8, { roughness:0.6 }),
+  teal: std(0x13808F, { roughness:0.45 }), perf: new THREE.MeshStandardMaterial({ map:perfTex(3,3), roughness:0.8, metalness:0.1 }),
+  red: std(0xC8302B, { roughness:0.35 }), black: std(0x15191C, { roughness:0.4, metalness:0.3 }), white: std(0xFFFFFF, { roughness:0.4 }), grey: std(0x8E989F, { roughness:0.45, metalness:0.4 }),
+  led: new THREE.MeshStandardMaterial({ color:0x2EE07A, emissive:0x22c86a, emissiveIntensity:1.4 }),
+  logo: new THREE.MeshBasicMaterial({ map:texLogo, transparent:true }), warn: new THREE.MeshBasicMaterial({ map:texWarn, transparent:true }),
+  plate: std(0xBFC6CC, { roughness:0.45, metalness:0.5 }), rack: std(0x2B343B, { roughness:0.5, metalness:0.4 }),
+  module: std(0x3B454E, { roughness:0.55, metalness:0.25 }), modFace: std(0x2A3138, { roughness:0.6 }), alu: std(0xB8C0C6, { roughness:0.35, metalness:0.75 }),
+  copper: std(0xC77B3A, { roughness:0.35, metalness:0.7 }), mccb: std(0x2F3439, { roughness:0.5 }), mccbCover: std(0x434B53, { roughness:0.5 }), shield: std(0x9AA3AA, { roughness:0.4, transparent:true, opacity:0.75 }),
+  tblock: std(0x8C979F, { roughness:0.6 }), ems: std(0x1E262C, { roughness:0.4 }), cableAC: std(0x23313B, { roughness:0.7 }), cableDC: std(0xE8742A, { roughness:0.5 }),
+  hv: std(0x56636D, { roughness:0.5, metalness:0.2 }), pcs: std(0xD9DFE3, { roughness:0.5, metalness:0.15 }), chiller: std(0xB9C2C8, { roughness:0.5, metalness:0.3 }),
+  pipeIn: std(0x2F7FC1, { roughness:0.4 }), pipeOut: std(0xC8462B, { roughness:0.4 }),
+  skid: std(0xA9B2B8, { roughness:0.6, metalness:0.35 }), skidIn: std(0x939CA3, { roughness:0.7, metalness:0.3 }), frameW: std(0xF4F6F7, { roughness:0.38, metalness:0.25 }), cast: std(0xE4E8EA, { roughness:0.4, metalness:0.3 }),
+  oval: new THREE.MeshBasicMaterial({ map:texOval, transparent:true }), sign: new THREE.MeshBasicMaterial({ map:texSign }), ribs: std(0xD3DADF, { roughness:0.5, metalness:0.3 }),
+  chg: std(0xF1F3F4, { roughness:0.4, metalness:0.1 }), chgPanel: std(0xD6DBDE, { roughness:0.5 }), chgPerf: new THREE.MeshStandardMaterial({ map:perfTex(2,10,texPerfL), roughness:0.7 }),
+  chgScreen: new THREE.MeshBasicMaterial({ map:chgTex }), rfid: new THREE.MeshBasicMaterial({ map:texRfid }),
+  gun: std(0x1B1F22, { roughness:0.45, metalness:0.2 }), gunNose: std(0x60686E, { roughness:0.3, metalness:0.7 }), evCable: std(0x15181A, { roughness:0.6 }),
+  tire: std(0x16191B, { roughness:0.85 }), rim: std(0x9BA4AA, { roughness:0.3, metalness:0.8 }), glassCar: std(0x1A2630, { roughness:0.12, metalness:0.5 }),
+  headlight: new THREE.MeshStandardMaterial({ color:0xF4F7FA, emissive:0xE8F2FF, emissiveIntensity:0.6 }), taillight: new THREE.MeshStandardMaterial({ color:0x9E1E1E, emissive:0xC0282A, emissiveIntensity:0.5 }),
+  portDark: std(0x22282C, { roughness:0.5 }),
+  panel: new THREE.MeshStandardMaterial({ map:texPanel, roughness:0.25, metalness:0.3 }), beam: std(0x7D8A93, { roughness:0.45, metalness:0.55 }),
+  ledStrip: new THREE.MeshStandardMaterial({ color:0xE9F1F6, emissive:0xFFF3D6, emissiveIntensity:0 }),
+  pole: std(0x7D8A93, { roughness:0.5, metalness:0.5 }), concrete: std(0xB9C0C5, { roughness:0.9 }),
+  shopWall: std(0xD8CDBE, { roughness:0.85 }), trim: std(0x46525C, { roughness:0.6 }),
+  shopGlass: new THREE.MeshStandardMaterial({ color:0x3A4652, emissive:0xFFD89A, emissiveIntensity:0.25, roughness:0.2, metalness:0.2 }),
+  shopSign: new THREE.MeshBasicMaterial({ map:texShop }), line: new THREE.MeshBasicMaterial({ color:0xF7F9FA }), evMark: new THREE.MeshBasicMaterial({ map:texEV, transparent:true, depthWrite:false }),
+  pave: std(0xCBD1D5, { roughness:0.95 }),
+};
+const lampMat = (on, off) => new THREE.MeshStandardMaterial({ color:off, emissive:0x000000, roughness:0.3, userData:{ on, off } });
+function setLamp(m, lit){ const mt = m.material; mt.color.set(lit ? mt.userData.on : mt.userData.off); mt.emissive.set(lit ? mt.userData.on : 0x000000); mt.emissiveIntensity = lit ? 1.6 : 0; }
+const polyPath = pts => { const cp = new THREE.CurvePath(); for (let i=0;i<pts.length-1;i++) cp.add(new THREE.LineCurve3(pts[i], pts[i+1])); return cp; };
+function tube(pts, r, mat){ return new THREE.Mesh(new THREE.TubeGeometry(polyPath(pts), 24 * pts.length, r, 8, false), mat); }
+// a plane facing a given axis direction: 'z+','z-','x+','x-'
+function facePlane(w, h, mat, x, y, z, face){ const p = plane(w, h, mat, x, y, z); p.rotation.y = { 'z+':0, 'z-':Math.PI, 'x+':Math.PI/2, 'x-':-Math.PI/2 }[face]; return p; }
+
+/* ================= picking registry & number stickers ================= */
+const PICK = [], GROUPS = {}, BADGES = [];
+function tag(id, root, pickable=true){ const list = GROUPS[id] || (GROUPS[id] = []); root.traverse(o => { if (o.isMesh){ if (o.userData.badge || o.userData.part) return; if (!o.userData.sharedMat) o.material = o.material.clone(); o.userData.part = id; list.push(o); if (pickable) PICK.push(o); } }); }
+const badgeCache = {};
+function badgeTex(txt, active){ const k = txt + (active ? '*' : ''); return badgeCache[k] || (badgeCache[k] = canvasTex(128,128,(g)=>{ g.fillStyle='#FFFFFF'; g.beginPath(); g.arc(64,64,62,0,Math.PI*2); g.fill(); g.fillStyle = active ? '#13808F' : '#0F1C26'; g.beginPath(); g.arc(64,64,54,0,Math.PI*2); g.fill(); g.fillStyle='#FFFFFF'; g.font = `800 ${txt.length > 2 ? 44 : txt.length > 1 ? 56 : 68}px Manrope, Arial, sans-serif`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(txt,64,68); })); }
+// number sticker fixed to the equipment surface: it moves only together with its object
+function badge(parent, id, txt, size, pos, rotY=0, double=false){
+  const g = new THREE.Group(); g.position.copy(pos); g.rotation.y = rotY;
+  const mk = flip => { const m = new THREE.Mesh(new THREE.CircleGeometry(size/2, 40), new THREE.MeshBasicMaterial({ map:badgeTex(txt, false), transparent:true, polygonOffset:true, polygonOffsetFactor:-2 })); if (flip) m.rotation.y = Math.PI; m.userData = { part:id, sharedMat:true, badge:txt }; BADGES.push(m); PICK.push(m); g.add(m); };
+  mk(false); if (double) mk(true);
+  parent.add(g); return g;
+}
+
+/* ================= ground and parking ================= */
+const pave = new THREE.Mesh(new THREE.CircleGeometry(11, 72), M.pave); pave.rotation.x = -Math.PI/2; pave.position.set(1.0, 0, 0.6); pave.receiveShadow = true; scene.add(pave);
+[2.15, 4.68, 7.21].forEach(x => { const l = plane(0.08, 5.2, M.line, x, 0.004, 1.0); l.rotation.x = -Math.PI/2; scene.add(l); });
+[3.4, 5.95].forEach(x => { const e = plane(1.1, 1.1, M.evMark, x, 0.005, 3.75); e.rotation.x = -Math.PI/2; scene.add(e); scene.add(box(1.3, 0.1, 0.18, M.concrete, x, 0.05, -1.55)); });
+
+/* ================= skid frame (Golen render: open frame with corner fittings and roof) ================= */
+// Proportions from the Golen renders: side cabinet 650 + battery cabinet 1000 + charger ≈570 mm inside the frame.
+// The datasheet gives 2300 × 1500 × 2700 mm; the renders correspond to ≈2.85 m width — flagged for Golen.
+const SK = { W:2.85, D:1.5, H:2.7, BASE:0.175, POST:0.11, BEAM:0.13 }, DECK = SK.BASE;
+const skid = new THREE.Group(); scene.add(skid);
+skid.add(box(SK.W, SK.BASE, SK.D, M.skid, 0, SK.BASE/2, 0));
+skid.add(box(SK.W - 0.02, 0.012, SK.D - 0.02, M.plinthL, 0, SK.BASE + 0.006, 0));
+[1, -1].forEach(sz => {
+  const z = sz * (SK.D/2 + 0.002);
+  skid.add(facePlane(SK.W - 0.3, SK.BASE - 0.06, M.skidIn, 0, SK.BASE/2, z, sz > 0 ? 'z+' : 'z-'));
+  for (let i = 0; i <= 6; i++) skid.add(box(0.035, SK.BASE - 0.04, 0.02, M.skid, -SK.W/2 + 0.15 + i * (SK.W - 0.3) / 6, SK.BASE/2, sz * (SK.D/2 + 0.004)));
+});
+skid.add(box(0.07, 0.07, 0.012, M.copper, SK.W/2 - 0.42, 0.085, SK.D/2 + 0.012));
+const PX = SK.W/2 - SK.POST/2, PZ = SK.D/2 - SK.POST/2;
+[-1, 1].forEach(sx => [-1, 1].forEach(sz => {
+  skid.add(box(SK.POST, SK.H - 0.24, SK.POST, M.frameW, sx * PX, SK.H/2, sz * PZ));
+  [0.06, SK.H - 0.06].forEach(y => {
+    const cx = sx * (SK.W/2 - 0.085), cz = sz * (SK.D/2 - 0.085);
+    skid.add(box(0.17, 0.12, 0.17, M.cast, cx, y, cz));
+    skid.add(facePlane(0.075, 0.045, M.oval, cx, y, sz * (SK.D/2 + 0.002), sz > 0 ? 'z+' : 'z-'));
+    skid.add(facePlane(0.075, 0.045, M.oval, sx * (SK.W/2 + 0.002), y, cz, sx > 0 ? 'x+' : 'x-'));
+  });
+}));
+[-1, 1].forEach(sz => skid.add(box(SK.W - 0.3, SK.BEAM, SK.POST, M.frameW, 0, SK.H - SK.BEAM/2, sz * PZ)));
+[-1, 1].forEach(sx => skid.add(box(SK.POST, SK.BEAM, SK.D - 0.3, M.frameW, sx * PX, SK.H - SK.BEAM/2, 0)));
+skid.add(box(SK.W - 0.04, 0.016, SK.D - 0.04, M.roof, 0, SK.H - 0.01, 0));
+for (let x = -SK.W/2 + 0.32; x < SK.W/2 - 0.2; x += 0.34) skid.add(box(0.03, 0.05, SK.D - 0.24, M.ribs, x, SK.H - 0.045, 0));
+// fascia with the sign on the right end, as in the Golen render
+skid.add(box(0.03, 0.30, SK.D - 0.22, M.frameW, SK.W/2 - 0.03, SK.H - SK.BEAM - 0.15, 0));
+skid.add(facePlane(1.12, 0.22, M.sign, SK.W/2 - 0.012, SK.H - SK.BEAM - 0.15, 0, 'x+'));
+tag('skid', skid);
+badge(skid, 'skid', '1', 0.13, V(-SK.W/2 + 0.42, SK.BASE/2, SK.D/2 + 0.016));
+
+/* ================= cabinets ================= */
+const FZ = 0.68, CH = 2.35, PL = 0.10;
+const SIDE_X = -0.89, SW = 0.65, SD = 1.05, MAIN_X = -0.065, MW = 1.0, MD = 1.33;
+function cabShell(g, w, d){
+  g.add(box(w, PL, d, M.plinthL, 0, PL/2, 0));
+  [-1, 1].forEach(s => g.add(box(0.025, 0.025, 0.01, M.copper, s * (w/2 - 0.05), PL/2, d/2 + 0.006)));
+  const t = 0.018, SB = CH - PL - 0.04, yc = PL + SB/2, mat = M.shell, walls = [];
+  walls.push(box(t, SB, d - 0.03, mat, -w/2 + t/2, yc, -0.015), box(t, SB, d - 0.03, mat, w/2 - t/2, yc, -0.015), box(w - 2*t, SB, t, mat, 0, yc, -d/2 + 0.005 + t/2), box(w - 2*t, t, d - 0.03, mat, 0, PL + t/2, -0.015));
+  walls.forEach(m => g.add(m));
+  g.add(plane(w - 2*t, SB, M.shellIn, 0, yc, -d/2 + 0.035));
+  const roof = box(w + 0.02, 0.04, d + 0.02, M.roof, 0, CH - 0.02, 0); g.add(roof); walls.push(roof);
+  g.add(plane(w + 0.02, 0.018, M.teal, 0, CH - 0.024, d/2 + 0.0105));
+  return walls;
+}
+function cabDoor(g, w, d){
+  const hinge = new THREE.Group(); hinge.position.set(-w/2 + 0.005, 0, d/2 - 0.02); g.add(hinge);
+  const dw = w - 0.02, dh = CH - PL - 0.06, door = new THREE.Group(); hinge.add(door);
+  door.add(box(dw, dh, 0.025, M.door, dw/2, PL + 0.01 + dh/2, 0.0125));
+  { const p = plane(dw - 0.04, dh - 0.05, M.doorIn, dw/2, PL + 0.01 + dh/2, -0.001); p.rotation.y = Math.PI; door.add(p); }
+  return { hinge, door, dw };
+}
+const grille = (door, w, h, x, y, mat=M.perf) => { door.add(plane(w, h, mat, x, y, 0.026)); [y + h/2 + 0.01, y - h/2 - 0.01].forEach(yy => door.add(box(w + 0.02, 0.012, 0.012, M.frame, x, yy, 0.03))); };
+
+// ---- side cabinet: STS and DC/DC (front per the Golen PSC render; interior schematic)
+const SC = new THREE.Group(); SC.position.set(SIDE_X, DECK, FZ - SD/2); scene.add(SC);
+const sWalls = cabShell(SC, SW, SD);
+const DS = cabDoor(SC, SW, SD), doorS = DS.door, hingeS = DS.hinge;
+grille(doorS, 0.385, 0.68, 0.31, 1.78);
+const lampA = cyl(0.013, 0.02, lampMat(0x2EE07A, 0x2a4a38), 0.38, 1.36, 0.035), lampB = cyl(0.013, 0.02, lampMat(0x2EE07A, 0x2a4a38), 0.475, 1.36, 0.035);
+[cyl(0.022, 0.012, M.white, 0.38, 1.36, 0.03), cyl(0.022, 0.012, M.white, 0.475, 1.36, 0.03), lampA, lampB].forEach(m => { m.rotation.x = Math.PI/2; doorS.add(m); });
+doorS.add(plane(0.085, 0.075, M.warn, 0.30, 0.96, 0.0265));
+doorS.add(plane(0.26, 0.062, M.logo, 0.20, 2.22, 0.0265));
+doorS.add(box(0.026, 0.2, 0.03, M.black, DS.dw - 0.035, 1.23, 0.04));
+const inLightS = new THREE.PointLight(0xffffff, 0, 2.2, 1.5); inLightS.position.set(0, 1.5, 0.3); SC.add(inLightS);
+tag('side', doorS); sWalls.forEach(m => tag('side', m));
+badge(doorS, 'side', '2', 0.12, V(DS.dw - 0.13, 2.1, 0.0262));
+
+/* detailed moulded-case breaker (schematic) */
+function buildMCCB(label, w=0.15, hgt=0.26){
+  const g = new THREE.Group();
+  g.add(box(w, hgt, 0.1, M.mccb, 0, 0, 0));
+  g.add(box(w * 0.82, hgt * 0.5, 0.022, M.mccbCover, 0, -0.005, 0.061));
+  for (let i = -1; i <= 1; i++) g.add(box(0.004, hgt * 0.92, 0.104, M.mccbCover, i * w * 0.32, 0, 0));
+  g.add(box(0.034, 0.075, 0.006, M.black, 0, -0.005, 0.074));
+  const pivot = new THREE.Group(); pivot.position.set(0, -0.005, 0.074); g.add(pivot); pivot.rotation.x = -0.5;
+  pivot.add(box(0.026, 0.026, 0.05, M.black, 0, 0, 0.025)); pivot.add(box(0.026, 0.008, 0.008, M.white, 0, 0.012, 0.046));
+  g.add(plane(0.03, 0.016, new THREE.MeshBasicMaterial({ color:0xD03A2F }), w * 0.26, 0.02, 0.0725));
+  g.add(plane(w - 0.02, 0.034, new THREE.MeshBasicMaterial({ map:texTag(label) }), 0, hgt/2 - 0.03, 0.0505));
+  [hgt/2 + 0.02, -hgt/2 - 0.02].forEach((y, k) => { g.add(box(w * 0.92, 0.04, 0.09, M.shield, 0, y, -0.005)); [-1, 0, 1].forEach(i => g.add(box(0.022, 0.03, 0.04, M.copper, i * w * 0.3, y + (k ? -0.03 : 0.03), 0.0))); });
+  [-1, 0, 1].forEach(i => g.add(tube([V(i * w * 0.3, -hgt/2 - 0.05, 0), V(i * w * 0.3, -hgt/2 - 0.17, -0.02)], 0.009, M.cableAC)));
+  return g;
+}
+function buildStsModule(){
+  const g = new THREE.Group(), fans = [];
+  for (let k = 0; k < 14; k++) g.add(box(0.006, 0.3, 0.13, M.alu, -0.195 + k*0.03, 0, -0.07));
+  g.add(box(0.44, 0.32, 0.03, M.alu, 0, 0, 0.01));
+  [-0.13, 0, 0.13].forEach(x => { g.add(box(0.1, 0.2, 0.045, M.black, x, -0.02, 0.0475)); [-0.09, 0.05].forEach(y => g.add(box(0.06, 0.02, 0.012, M.copper, x, y, 0.076))); });
+  g.add(plane(0.12, 0.03, new THREE.MeshBasicMaterial({ map:texTag('STS') }), -0.13, 0.135, 0.0262));
+  const led = new THREE.Mesh(new THREE.SphereGeometry(0.009, 12, 8), lampMat(0x2EE07A, 0x2a4a38)); led.position.set(0.18, 0.135, 0.03); g.add(led);
+  [-0.1, 0.1].forEach(x => { g.add(box(0.13, 0.03, 0.13, M.black, x, -0.18, -0.07)); const bl = new THREE.Group(); bl.position.set(x, -0.162, -0.07); bl.add(box(0.11, 0.004, 0.022, M.module)); bl.add(box(0.022, 0.004, 0.11, M.module)); g.add(bl); fans.push(bl); });
+  return { g, led, fans };
+}
+const innerS = new THREE.Group(); innerS.position.z = 0.16; SC.add(innerS);
+innerS.add(plane(0.58, 2.05, M.plate, 0, 1.2, -0.31));
+innerS.add(box(0.6, 0.012, 0.6, M.plate, 0, 0.85, -0.02));
+const DCY = [0.22, 0.385, 0.55, 0.715];
+const dcG = new THREE.Group(); innerS.add(dcG);
+DCY.forEach(y => {
+  [-0.268, 0.268].forEach(x => dcG.add(box(0.012, 0.012, 0.64, M.rack, x, y - 0.075, -0.02)));
+  const g = new THREE.Group(); g.position.set(0, y, -0.02);
+  g.add(box(0.52, 0.14, 0.62, M.module, 0, 0, 0)); g.add(box(0.52, 0.14, 0.015, M.modFace, 0, 0, 0.3175));
+  g.add(plane(0.22, 0.055, new THREE.MeshBasicMaterial({ map:texDc }), -0.1, 0.02, 0.3255));
+  [0.12, 0.155].forEach(x => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.008, 10, 8), M.led); l.position.set(x, 0.03, 0.327); g.add(l); });
+  [-0.235, 0.235].forEach(x => g.add(box(0.018, 0.08, 0.03, M.black, x, 0, 0.335)));
+  dcG.add(g);
+});
+tag('dc', dcG); badge(dcG, 'dc', '2.3', 0.06, V(0.19, DCY[3] - 0.035, 0.3065));
+const STS = buildStsModule(); STS.g.position.set(0, 1.14, -0.17); innerS.add(STS.g); tag('sts', STS.g);
+badge(STS.g, 'sts', '2.2', 0.06, V(-0.19, 0.11, 0.0262));
+[-0.05, 0, 0.05].forEach(x => innerS.add(box(0.018, 0.2, 0.006, M.copper, x, 1.41, -0.2)));
+const brkG = new THREE.Group(); brkG.position.set(0, 1.66, 0); innerS.add(brkG);
+[['Q1 МЕРЕЖА', -0.19], ['Q3 РЕЗЕРВ', 0], ['Q2 PCS', 0.19]].forEach(([l, x]) => { const b = buildMCCB(l); b.position.set(x, 0, -0.255); brkG.add(b); });
+tag('brk', brkG); badge(innerS, 'brk', '2.1', 0.06, V(-0.26, 1.88, -0.305));
+const ctrl = new THREE.Group(); ctrl.position.set(-0.06, 2.05, -0.27); innerS.add(ctrl);
+ctrl.add(box(0.3, 0.17, 0.07, M.ems, 0, 0, 0));
+const ctrlScreen = plane(0.24, 0.105, new THREE.MeshBasicMaterial({ map:texCtrlOn }), 0, 0.01, 0.0355); ctrl.add(ctrlScreen);
+ctrl.add(box(0.2, 0.03, 0.01, M.alu, 0.27, 0, -0.03));
+for (let k = 0; k < 9; k++) ctrl.add(box(0.014, 0.06, 0.04, M.tblock, 0.19 + k*0.02, 0, -0.01));
+tag('ctrl', ctrl); badge(innerS, 'ctrl', '2.4', 0.06, V(-0.26, 2.06, -0.305));
+// connections to the battery cabinet through the right wall
+innerS.add(tube([V(0.19, 1.49, -0.255), V(0.19, 1.44, -0.255), V(0.305, 1.44, -0.255)], 0.016, M.cableAC));
+innerS.add(tube([V(0.285, 0.15, -0.1), V(0.285, 0.8, -0.1), V(0.305, 0.8, -0.1)], 0.014, M.cableDC));
+innerS.add(tube([V(0.29, 0.15, -0.16), V(0.29, 0.76, -0.16), V(0.305, 0.76, -0.16)], 0.014, M.cableDC));
+innerS.traverse(o => { if (o.isMesh) o.receiveShadow = false; });
+
+// ---- battery cabinet 241 kWh (front per the Golen PSC render; interior schematic)
+const MC = new THREE.Group(); MC.position.set(MAIN_X, DECK, FZ - MD/2); scene.add(MC);
+const mWalls = cabShell(MC, MW, MD);
+const DM = cabDoor(MC, MW, MD), doorM = DM.door, hingeM = DM.hinge;
+doorM.add(plane(0.28, 0.066, M.logo, 0.24, 2.23, 0.0265));
+[2.27, 2.25, 2.23].forEach(y => doorM.add(box(0.145, 0.012, 0.004, M.teal, 0.725, y, 0.028)));
+doorM.add(plane(0.145, 1.30, M.teal, 0.725, 1.53, 0.0262));
+[0.20, 0.18, 0.16].forEach(y => doorM.add(box(0.145, 0.012, 0.004, M.teal, 0.725, y, 0.028)));
+doorM.add(box(0.12, 0.12, 0.02, M.grey, 0.725, 1.86, 0.036));
+{ const m = cyl(0.035, 0.04, M.red, 0.725, 1.86, 0.065); m.rotation.x = Math.PI/2; doorM.add(m); }
+const ledsM = [[1.66, 0x2EE07A], [1.56, 0x2EE07A], [1.45, 0xE0402E]].map(([y, c]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.011, 12, 8), lampMat(c, 0x2a3a34)); l.position.set(0.725, y, 0.03); doorM.add(l); return l; });
+[cyl(0.042, 0.012, M.grey, 0.725, 1.34, 0.032), cyl(0.026, 0.024, M.red, 0.725, 1.34, 0.045)].forEach(m => { m.rotation.x = Math.PI/2; doorM.add(m); });
+doorM.add(box(0.026, 0.2, 0.03, M.black, DM.dw - 0.03, 1.23, 0.04));
+doorM.add(plane(0.085, 0.075, M.warn, 0.50, 0.96, 0.0265));
+grille(doorM, 0.705, 0.58, 0.508, 0.535);
+{ const m = cyl(0.008, 0.01, M.black, 0.85, 2.17, 0.03); m.rotation.x = Math.PI/2; doorM.add(m); }
+const inLightM = new THREE.PointLight(0xffffff, 0, 2.6, 1.5); inLightM.position.set(0, 1.4, 0.4); MC.add(inLightM);
+tag('batt', doorM); mWalls.forEach(m => tag('batt', m));
+badge(doorM, 'batt', '3', 0.13, V(0.45, 2.2, 0.0262));
+const innerM = new THREE.Group(); MC.add(innerM);
+innerM.add(plane(0.92, 2.1, M.plate, 0, 1.2, -MD/2 + 0.04));
+const pcsG = new THREE.Group(); pcsG.position.set(0, 1.98, -0.12); innerM.add(pcsG);
+pcsG.add(box(0.84, 0.40, 0.8, M.pcs, 0, 0, 0));
+pcsG.add(plane(0.42, 0.26, new THREE.MeshStandardMaterial({ map:perfTex(3, 2), roughness:0.8 }), -0.17, -0.02, 0.401));
+pcsG.add(plane(0.2, 0.09, new THREE.MeshBasicMaterial({ map:texPcs }), 0.24, 0.06, 0.401));
+pcsG.add(plane(0.22, 0.05, new THREE.MeshBasicMaterial({ map:texTag('PCS 120 кВт') }), 0.24, -0.08, 0.401));
+tag('pcs', pcsG); badge(pcsG, 'pcs', '3.1', 0.06, V(0.36, 0.14, 0.402));
+innerM.add(box(0.9, 0.015, 1.1, M.plate, 0, 1.75, -0.1));
+const modG = new THREE.Group(); innerM.add(modG);
+for (let i = 0; i < 5; i++){
+  const y = 0.66 + i * 0.215, g = new THREE.Group(); g.position.set(0, y, -0.1);
+  g.add(box(0.84, 0.19, 1.0, M.module, 0, 0, 0)); g.add(box(0.84, 0.19, 0.012, M.modFace, 0, 0, 0.506));
+  [-0.36, 0.36].forEach(x => g.add(box(0.03, 0.09, 0.03, M.black, x, 0, 0.525)));
+  [-0.12, 0.12].forEach(x => g.add(box(0.05, 0.05, 0.04, M.cableDC, x, 0.02, 0.52)));
+  modG.add(g);
+}
+{ const hvb = new THREE.Group(); hvb.position.set(0, 0.5, -0.05); hvb.add(box(0.62, 0.12, 0.6, M.hv)); hvb.add(box(0.16, 0.05, 0.02, new THREE.MeshStandardMaterial({ color:0x0c3d47, emissive:0x2bb6c9, emissiveIntensity:0.9 }), -0.16, 0.01, 0.305)); [0.07, 0.17].forEach(x => hvb.add(box(0.05, 0.05, 0.04, M.cableDC, x, 0, 0.32))); modG.add(hvb); }
+tag('mods', modG); badge(modG, 'mods', '3.2', 0.06, V(-0.3, 0.66 + 4 * 0.215, 0.413));
+const coolG = new THREE.Group(); innerM.add(coolG);
+coolG.add(box(0.86, 0.3, 0.9, M.chiller, 0, 0.26, -0.12));
+{ const f = new THREE.Mesh(new THREE.CircleGeometry(0.11, 32), new THREE.MeshStandardMaterial({ map:perfTex(1, 1), roughness:0.8 })); f.position.set(-0.18, 0.26, 0.332); coolG.add(f); }
+coolG.add(tube([V(0.38, 0.4, 0.2), V(0.38, 1.6, 0.2), V(0.3, 1.6, 0.2)], 0.014, M.pipeIn));
+coolG.add(tube([V(0.41, 0.4, 0.14), V(0.41, 1.62, 0.14), V(0.3, 1.62, 0.14)], 0.014, M.pipeOut));
+tag('cool', coolG); badge(coolG, 'cool', '3.3', 0.06, V(0.25, 0.3, 0.332));
+innerM.traverse(o => { if (o.isMesh) o.receiveShadow = false; });
+
+/* ================= DC charger 120 kW, 2 guns (proportions from the Golen renders) ================= */
+const CH_X = 0.725, CHW = 0.57, CHD = 0.78, CHZ = 0.11, CHH = 1.72;
+const CG = new THREE.Group(); CG.position.set(CH_X, DECK, CHZ); scene.add(CG);
+CG.add(box(CHW, 0.08, CHD, M.plinthL, 0, 0.04, 0));
+CG.add(box(CHW, CHH - 0.11, CHD, M.chg, 0, 0.08 + (CHH - 0.11)/2, 0));
+CG.add(box(CHW + 0.02, 0.03, CHD + 0.02, M.chg, 0, CHH - 0.015, 0));
+const FF = CHD/2 + 0.002, EF = CHW/2 + 0.002;
+CG.add(plane(0.31, 1.11, M.chgPanel, -0.10, 1.085, FF));
+CG.add(plane(0.17, 0.95, M.chgPerf, -0.095, 1.10, FF + 0.001));
+[1.44, 0.99].forEach(y => CG.add(box(0.03, 0.05, 0.03, M.black, 0.02, y, FF + 0.012)));
+CG.add(box(0.12, 0.095, 0.02, M.black, 0.15, 1.53, FF));
+CG.add(plane(0.08, 0.19, M.chgPerf, 0.14, 1.29, FF + 0.001));
+CG.add(facePlane(0.24, 0.055, M.logo, EF, 1.56, -0.05, 'x+'));
+CG.add(facePlane(0.30, 0.012, M.teal, EF, 1.48, -0.05, 'x+'));
+const chgScreen = facePlane(0.20, 0.25, M.chgScreen, EF, 1.24, -0.05, 'x+'); CG.add(chgScreen);
+CG.add(facePlane(0.08, 0.08, M.rfid, EF, 1.02, -0.05, 'x+'));
+CG.add(box(0.006, 0.05, 0.03, M.black, EF, 0.9, -0.05));
+const HOL = [V(EF + CH_X, DECK + 0.76, CHZ - 0.02), V(EF + CH_X, DECK + 0.76, CHZ - 0.22)];
+HOL.forEach(h => CG.add(box(0.05, 0.11, 0.09, M.black, h.x - CH_X + 0.02, h.y - DECK, h.z - CHZ)));
+tag('chg', CG); badge(CG, 'chg', '4', 0.11, V(-0.19, 1.6, FF + 0.002));
+const OUT = [V(CH_X + 0.13, DECK + 1.50, CHZ + FF + 0.01), V(CH_X + 0.17, DECK + 1.50, CHZ + FF + 0.01)];
+
+/* ================= cars (scene items) ================= */
+function profileGeo(pts, depth, bevel){
+  const sh = new THREE.Shape(); sh.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) sh.lineTo(pts[i][0], pts[i][1]); sh.closePath();
+  const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled:true, bevelSize:bevel, bevelThickness:bevel, bevelSegments:3, curveSegments:6 });
+  g.translate(0, 0, -depth/2); g.rotateY(-Math.PI/2); return g;
+}
+// stylised EV: side profile extruded across the width; the car faces −z, the charge port is on the rear left
+const CAR_BODY = profileGeo([[-2.24,0.26],[-2.27,0.5],[-2.16,0.66],[-1.2,0.84],[1.7,0.9],[2.2,0.88],[2.27,0.66],[2.22,0.26]], 1.74, 0.07);
+const CAR_GLASS = profileGeo([[-1.18,0.86],[-0.42,1.3],[0.7,1.36],[1.72,0.94],[1.68,0.88]], 1.6, 0.04);
+{ const pa = CAR_GLASS.attributes.position; for (let i = 0; i < pa.count; i++){ const y = pa.getY(i); if (y > 0.92) pa.setX(i, pa.getX(i) * (1 - (y - 0.92) * 0.55)); } pa.needsUpdate = true; CAR_GLASS.computeVertexNormals(); }
+function buildCar(paint){
+  const g = new THREE.Group(), body = std(paint, { roughness:0.28, metalness:0.55 });
+  const b = new THREE.Mesh(CAR_BODY, body); b.castShadow = true; b.receiveShadow = true; g.add(b);
+  const gl = new THREE.Mesh(CAR_GLASS, M.glassCar); gl.castShadow = true; g.add(gl);
+  g.add(box(1.7, 0.16, 4.3, M.black, 0, 0.22, 0));
+  [-1, 1].forEach(sx => [-1.42, 1.45].forEach(sz => { const w = cyl(0.33, 0.24, M.tire, sx * 0.83, 0.33, sz, 26); w.rotation.z = Math.PI/2; g.add(w); const r = cyl(0.2, 0.25, M.rim, sx * 0.84, 0.33, sz, 18); r.rotation.z = Math.PI/2; g.add(r); }));
+  g.add(box(1.4, 0.04, 0.03, M.headlight, 0, 0.62, -2.3)); g.add(box(1.6, 0.05, 0.03, M.taillight, 0, 0.76, 2.29));
+  g.add(box(0.02, 0.1, 0.12, M.portDark, -0.95, 0.8, 1.55));
+  return g;
+}
+const CARS = [ { x:3.4, paint:0xBFD3DC }, { x:5.95, paint:0x4E5B66 } ].map((c, i) => {
+  const g = buildCar(c.paint); g.position.set(c.x, 0, 1.0); scene.add(g); tag('cars', g);
+  badge(g, 'cars', '9', 0.2, V(0.5, 0.56, 2.33));
+  return { g, x:c.x, port:V(c.x - 0.97, 0.8, 2.55) };
+});
+
+/* ================= guns and cables ================= */
+function buildGun(){ const g = new THREE.Group(); g.add(box(0.055, 0.16, 0.065, M.gun, 0, -0.07, 0)); g.add(box(0.13, 0.07, 0.075, M.gun, 0.045, 0.02, 0)); const n = cyl(0.03, 0.05, M.gunNose, 0.13, 0.02, 0, 16); n.rotation.z = Math.PI/2; g.add(n); return g; }
+const GUNS = [0, 1].map(i => { const g = buildGun(); scene.add(g); return g; });
+GUNS.forEach(g => tag('guns', g));
+const cableMat = M.evCable;
+const cableMesh = [null, null], cablePath = [null, null], cableKey = ['', ''];
+function cablePoints(i, plugged){
+  const o = OUT[i], h = HOL[i], p = CARS[i].port;
+  if (!plugged) return [o, V(o.x + 0.05, 1.25, o.z + 0.06 + i * 0.04), V(1.07 + i * 0.03, 0.42, 0.66 + i * 0.05), V(1.14, 0.5, h.z + 0.12), V(h.x + 0.16, h.y - 0.15, h.z)];
+  if (i === 0) return [o, V(1.05, 1.2, 0.75), V(1.6, 0.3, 1.6), V(p.x - 0.4, 0.4, p.z), V(p.x - 0.16, p.y - 0.15, p.z)];
+  return [o, V(1.06, 1.2, 0.78), V(1.5, 0.08, 2.0), V(2.5, 0.05, 3.6), V(4.6, 0.05, 3.6), V(p.x - 0.3, 0.35, p.z + 0.2), V(p.x - 0.16, p.y - 0.15, p.z)];
+}
+function setCable(i, plugged){
+  const k = plugged ? 'p' : 'd'; if (cableKey[i] === k) return; cableKey[i] = k;
+  const curve = new THREE.CatmullRomCurve3(cablePoints(i, plugged), false, 'centripetal');
+  cablePath[i] = curve;
+  if (cableMesh[i]){ cableMesh[i].geometry.dispose(); cableMesh[i].geometry = new THREE.TubeGeometry(curve, 90, 0.016, 8, false); }
+  else { cableMesh[i] = new THREE.Mesh(new THREE.TubeGeometry(curve, 90, 0.016, 8, false), cableMat); cableMesh[i].castShadow = true; scene.add(cableMesh[i]); tag('guns', cableMesh[i]); }
+  const g = GUNS[i];
+  if (plugged){ const p = CARS[i].port; g.position.set(p.x - 0.16, p.y, p.z); g.rotation.set(0, 0, 0); }
+  else { const h = HOL[i]; g.position.set(h.x + 0.16, h.y, h.z); g.rotation.set(0, Math.PI, 0); }
+}
+badge(CG, 'guns', '5', 0.08, V(EF, 0.98, -0.3), Math.PI/2);
+
+/* ================= PV carport over the bays (scene item; number of panels arbitrary) ================= */
+const CP = new THREE.Group(); scene.add(CP);
+const COLZ = -1.9, ROOF_BACK = 2.75, TILT = Math.atan(0.45 / 5.2);
+const roofY = z => ROOF_BACK + (z - COLZ) * Math.tan(TILT);
+[2.6, 4.7, 6.8].forEach(x => {
+  CP.add(box(0.16, ROOF_BACK, 0.16, M.beam, x, ROOF_BACK/2, COLZ));
+  CP.add(box(0.36, 0.06, 0.36, M.concrete, x, 0.03, COLZ));
+  const arm = box(0.1, 0.16, 5.45, M.beam, x, 0, 0); arm.position.set(x, (roofY(COLZ - 0.1) + roofY(3.35)) / 2 - 0.1, (COLZ - 0.1 + 3.35) / 2); arm.rotation.x = -TILT; CP.add(arm);
+});
+[-1.2, 0.6, 2.4].forEach(z => CP.add(box(4.6, 0.08, 0.08, M.beam, 4.7, roofY(z) - 0.02, z)));
+{ const im = new THREE.InstancedMesh(new THREE.BoxGeometry(1.13, 0.035, 2.28), M.panel, 8); im.castShadow = true; im.receiveShadow = true; im.userData.sharedMat = true;
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(-TILT, 0, 0)), m4 = new THREE.Matrix4(); let k = 0;
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++){ const z = -0.55 + r * 2.32, x = 2.98 + c * 1.15; m4.compose(V(x, roofY(z) + 0.04, z), q, V(1, 1, 1)); im.setMatrixAt(k++, m4); }
+  CP.add(im); }
+const cpLeds = [-0.3, 2.0].map(z => { const s = box(4.4, 0.02, 0.05, M.ledStrip.clone(), 4.7, roofY(z) - 0.08, z); s.castShadow = false; CP.add(s); return s; });
+const cpLight = new THREE.PointLight(0xFFF1D8, 0, 9, 1.6); cpLight.position.set(4.7, 2.4, 1.0); scene.add(cpLight);
+cpLeds.forEach(s => s.userData.glow = true);
+tag('pv', CP);
+badge(CP, 'pv', '6', 0.22, V(4.7, 1.6, COLZ + 0.082));
+
+/* ================= grid pole, backup load (shop) ================= */
+const POLE = new THREE.Group(); POLE.position.set(-2.4, 0, -3.2); scene.add(POLE);
+POLE.add(cyl(0.09, 6.0, M.pole, 0, 3.0, 0, 16)); POLE.add(box(1.4, 0.08, 0.1, M.pole, 0, 5.6, 0));
+[-0.6, 0, 0.6].forEach(x => { POLE.add(cyl(0.035, 0.16, M.white, x, 5.72, 0, 12)); POLE.add(tube([V(x, 5.8, 0), V(x, 5.62, -3.5), V(x, 5.8, -7)], 0.008, M.black)); });
+POLE.add(box(0.36, 0.5, 0.22, M.grey, 0, 1.4, 0.15));
+tag('grid', POLE); badge(POLE, 'grid', '7', 0.26, V(0, 2.3, 0.095), 0, true);
+const SHOP = new THREE.Group(); SHOP.position.set(-4.4, 0, 1.4); scene.add(SHOP);
+SHOP.add(box(3.1, 0.15, 2.5, M.concrete, 0, 0.075, 0));
+SHOP.add(box(3.0, 2.8, 2.4, M.shopWall, 0, 1.55, 0));
+SHOP.add(box(3.12, 0.16, 2.52, M.trim, 0, 3.02, 0));
+const shopWin = plane(1.7, 1.55, M.shopGlass, -0.45, 1.25, 1.202); SHOP.add(shopWin);
+const shopDoor = plane(0.8, 2.0, M.shopGlass, 0.95, 1.15, 1.202); SHOP.add(shopDoor);
+[-0.45 - 0.85, -0.45, -0.45 + 0.85].forEach(x => SHOP.add(box(0.04, 1.6, 0.03, M.trim, x, 1.25, 1.21)));
+SHOP.add(box(0.85, 0.04, 0.03, M.trim, 0.95, 2.16, 1.21));
+SHOP.add(plane(2.3, 0.38, M.shopSign, 0, 2.55, 1.205));
+tag('shop', SHOP); badge(SHOP, 'shop', '8', 0.26, V(1.22, 2.55, 1.206));
+shopWin.userData.glow = true; shopDoor.userData.glow = true;
+
+/* ================= cable routes on the ground (schematic) ================= */
+const YC = 0.03;
+const gridCable = M.cableAC.clone();
+const PATH = {
+  grid: polyPath([V(-2.4, YC, -3.05), V(-1.6, YC, -3.05), V(-1.6, YC, -0.3), V(-1.25, YC, -0.3)]),
+  pv: polyPath([V(2.6, YC, COLZ + 0.1), V(-0.9, YC, COLZ + 0.1), V(-0.9, YC, -0.78)]),
+  shop: polyPath([V(-1.3, YC, 0.35), V(-2.3, YC, 0.35), V(-2.3, YC, 1.4), V(-2.88, YC, 1.4)]),
+};
+scene.add(new THREE.Mesh(new THREE.TubeGeometry(PATH.grid, 60, 0.02, 8, false), gridCable));
+scene.add(new THREE.Mesh(new THREE.TubeGeometry(PATH.pv, 60, 0.02, 8, false), M.cableDC));
+scene.add(new THREE.Mesh(new THREE.TubeGeometry(PATH.shop, 60, 0.02, 8, false), M.cableAC));
+
+/* ================= flows ================= */
+const flows = [];
+function makeFlow(path, n, color, speed=0.11, keepY=false){ const grp = new THREE.Group(); const mat = new THREE.MeshBasicMaterial({ color }); for (let i=0;i<n;i++) grp.add(new THREE.Mesh(new THREE.SphereGeometry(keepY ? 0.035 : 0.055, 12, 8), mat)); grp.userData = { path, n, speed, dir:1, keepY }; scene.add(grp); flows.push(grp); return grp; }
+const FL = { grid: makeFlow(PATH.grid, 9, 0x4ABED8), pv: makeFlow(PATH.pv, 9, 0xF0A63A), shop: makeFlow(PATH.shop, 6, 0x2fc4d6), car: [makeFlow(null, 7, 0x2EE07A, 0.25, true), makeFlow(null, 10, 0x2EE07A, 0.18, true)] };
+function moveFlows(time){ flows.forEach(f => { const { path, n, speed, dir, keepY } = f.userData; if (!f.visible || !path) return; f.children.forEach((s, i) => { let u = ((time * speed) + i / n) % 1; if (dir < 0) u = 1 - u; s.position.copy(path.getPointAt(u)); if (!keepY) s.position.y = 0.09; }); }); }
+
+/* ================= state ================= */
+const S = { tod:'day', out:false, car:[true, false], carT:[1, 0], doorStep:0, doorST:0, doorMT:0, sel:null, hover:null };
+const plugged = i => S.car[i] && S.carT[i] > 0.985;
+function derive(){
+  const pv = S.tod === 'day', grid = !S.out, plug = [plugged(0), plugged(1)], n = plug.filter(Boolean).length;
+  let batt;
+  if (!grid) batt = (pv && n === 0) ? 'charge' : 'discharge';
+  else batt = S.tod === 'eve' ? 'discharge' : 'charge';
+  const gridFlow = grid && (S.tod !== 'day' || n === 2);
+  return { pv, grid, plug, n, batt, gridFlow };
+}
+const ease = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;
+const HL_HOVER = new THREE.Color(0x1f6f80), HL_SEL = new THREE.Color(0x13808F), BLACK = new THREE.Color(0x000000);
+const LAMPS = new Set([lampA, lampB, STS.led, ...ledsM]);
+let chgKey = '';
+function drawChg(d){
+  const key = `${d.plug[0]}${d.plug[1]}${d.grid}`; if (key === chgKey) return; chgKey = key;
+  const g = chgCtx, w = 256, h = 320;
+  g.fillStyle = '#0B2730'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#7FD6EA'; g.font = '800 30px Arial, sans-serif'; g.fillText('GOLEN', 18, 44);
+  g.fillStyle = d.grid ? '#4CC28C' : '#F0B04A'; g.font = '700 18px Arial, sans-serif'; g.fillText(d.grid ? 'МЕРЕЖА' : 'АВТОНОМНО', 150, 42);
+  [0, 1].forEach(i => { const y = 76 + i * 104; g.fillStyle = '#12394A'; g.fillRect(14, y, w - 28, 88); g.fillStyle = '#9AB0BC'; g.font = '700 20px Arial, sans-serif'; g.fillText(`Пістолет ${i + 1}`, 28, y + 32); g.fillStyle = d.plug[i] ? '#4CC28C' : '#6F8794'; g.font = '800 24px Arial, sans-serif'; g.fillText(d.plug[i] ? 'ЗАРЯДЖАННЯ' : 'ВІЛЬНИЙ', 28, y + 68); });
+  g.fillStyle = '#9AB0BC'; g.font = '600 16px Arial, sans-serif'; g.fillText('RFID · картка · POS', 28, 304);
+  chgTex.needsUpdate = true;
+}
+function apply(dt){
+  const d = derive();
+  hingeS.rotation.y = -ease(S.doorST) * 1.9; inLightS.intensity = 1.2 * ease(S.doorST);
+  hingeM.rotation.y = -ease(S.doorMT) * 1.85; inLightM.intensity = 1.3 * ease(S.doorMT);
+  const sg = S.sel;
+  for (const [id, list] of Object.entries(GROUPS)){
+    const c = sg === id ? HL_SEL : (S.hover === id ? HL_HOVER : BLACK);
+    const k = c === BLACK ? 0 : (c === HL_SEL ? 0.15 : 0.11);
+    list.forEach(o => { if (o.material.emissive && !o.userData.sharedMat && !LAMPS.has(o) && !o.material.map && !o.userData.glow) { o.material.emissive.copy(c); o.material.emissiveIntensity = k; } });
+  }
+  BADGES.forEach(m => { const tx = badgeTex(m.userData.badge, sg === m.userData.part); if (m.material.map !== tx) m.material.map = tx; });
+  setLamp(lampA, d.grid); setLamp(lampB, !d.grid);
+  setLamp(ledsM[0], true); setLamp(ledsM[1], true); setLamp(ledsM[2], false);
+  STS.led.material.color.set(d.grid ? 0x2EE07A : 0xF0B04A); STS.led.material.emissive.set(d.grid ? 0x2EE07A : 0xF0B04A); STS.led.material.emissiveIntensity = 1.6;
+  ctrlScreen.material.map = d.grid ? texCtrlOn : texCtrlOff;
+  gridCable.color.set(d.grid ? 0x23313B : 0xC8462B);
+  const glow = { day:0.25, eve:0.85, night:1.1 }[S.tod];
+  [shopWin, shopDoor].forEach(m => { m.material.emissiveIntensity = glow; });
+  cpLeds.forEach(s => { s.material.emissiveIntensity = S.tod === 'day' ? 0 : 1.6; });
+  cpLight.intensity = S.tod === 'night' ? 3.2 : (S.tod === 'eve' ? 1.4 : 0);
+  // cars drive in / out, guns follow the plug state
+  CARS.forEach((c, i) => { const t = S.carT[i]; c.g.visible = t > 0.002; c.g.position.z = 1.0 + (1 - ease(t)) * 7.5; setCable(i, d.plug[i]); });
+  drawChg(d);
+  FL.grid.visible = d.gridFlow; FL.pv.visible = d.pv; FL.shop.visible = true;
+  [0, 1].forEach(i => { FL.car[i].visible = d.plug[i]; FL.car[i].userData.path = cablePath[i]; });
+  return d;
+}
+// emissive light sources must not be overwritten by the highlight
+[shopWin, shopDoor, chgScreen, ...cpLeds].forEach(m => { m.userData.glow = true; });
+
+/* ================= texts ================= */
+const INFO = {
+  skid: { name:'Блок LES-241L120-PSC', kv:[['Габарити за паспортом','2300 × 1500 × 2700 мм'],['Маса','≈ 3,5 т'],['Захист','IP55'],['Виконання','на скіді, модульне']] },
+  side: { name:'Бокова шафа: STS і DC/DC', kv:[['Перехід на автономну роботу','STS, до 20 мс'],['СЕС','60–240 кВт, 200–660 В'],['Підключення СЕС','DC напряму']] },
+  brk: { name:'Вимикачі вводів', kv:[['Кола','мережа, PCS, резерв']] },
+  sts: { name:'Статичний перемикач STS', kv:[['Час переходу','до 20 мс']] },
+  dc: { name:'DC/DC-модулі СЕС', kv:[['Вхід СЕС','60–240 кВт'],['Напруга','200–660 В'],['На моделі','4 модулі']] },
+  ctrl: { name:'Контролер і зв\'язок', kv:[['EMS','Modbus TCP / RTU'],['Платформа зарядки','OCPP']] },
+  batt: { name:'Шафа накопичення 241 кВт·год', kv:[['Енергія','241 кВт·год'],['Батарея','LFP, 1P240S, 0,5C'],['Охолодження','рідинне'],['Пожежогасіння','аерозоль + вода']] },
+  pcs: { name:'PCS 120 кВт', kv:[['Потужність','120 кВт'],['Мережа','3W/N/PE, 230/400 В, 50 Гц']] },
+  mods: { name:'Батарейні модулі і BMS', kv:[['Конфігурація','1P240S'],['Енергія','241 кВт·год']] },
+  cool: { name:'Охолодження', kv:[['Батарейний відсік','рідинне'],['Електричний відсік','повітряне'],['Зарядна станція','природне']] },
+  chg: { name:'Зарядна станція DC 120 кВт', kv:[['Потужність','120 кВт'],['Пістолети','2'],['Струм пістолета','до 400 А'],['Вихідна напруга','150–1000 В'],['Оплата','RFID, картка, POS']] },
+  guns: { name:'Пістолети і кабелі', kv:[['Кількість','2'],['Струм','до 400 А'],['Постійна потужність','300–1000 В']] },
+  pv: { name:'СЕС на навісі', kv:[['Вхід блока','60–240 кВт'],['Напруга','200–660 В'],['Панелей на моделі','умовно']] },
+  grid: { name:'Мережа 0,4 кВ', kv:[['Мережа','3W/N/PE, 230/400 В, 50 Гц']] },
+  shop: { name:'Резервне навантаження', kv:[['Вихід','220 В і 380 В'],['Резерв','від батареї і СЕС']] },
+  cars: { name:'Електромобілі', kv:[['Місць на блок','2'],['Сумарно','до 120 кВт']] },
+};
+const DESC = {
+  P0: ['LES-241L120-PSC на об\'єкті', 'На моделі — блок Golen на скіді: бокова шафа з STS і DC/DC, шафа накопичення 241 кВт·год і зарядна станція на два пістолети. Поруч — навіс із сонячними панелями над двома місцями зарядки, мережа 0,4 кВ і магазин, якому блок дає резервне живлення.', 'Перемикайте день, вечір і ніч, вимикайте мережу, підключайте авто — потоки енергії і стан обладнання змінюються на моделі та на схемі нижче. Натисніть на вузол або номер, щоб побачити його ближче.'],
+  skid: ['Блок на скіді', 'Усе обладнання стоїть на сталевій рамі-скіді з кутовими фітингами, як у контейнера: блок привозять зібраним, ставлять краном і підключають. Дах рами закриває шафи й зарядну станцію від дощу та снігу, боки відкриті для обслуговування й підходу до зарядки.', 'За паспортом Golen маса блока ≈ 3,5 т, захист IP55, робоча температура від −20 до +55 °C. Для більших станцій є версія LES-482L240-PSC: 482 кВт·год, 240 кВт і 4 пістолети.'],
+  side: ['Бокова шафа: STS і DC/DC', 'Вузька шафа ліворуч відповідає за зв\'язок з мережею і сонцем. Статичний перемикач STS відключає мережу, коли вона зникає, за час до 20 мс, а DC/DC-модулі приймають СЕС постійним струмом напряму, без окремого інвертора.', 'Дві лампи на дверях показують режим: робота з мережею або автономна. Внутрішнє компонування шафи Golen не публікує, тому вузли всередині показані схематично — так само, як у боковій шафі версії -PS.'],
+  brk: ['Вимикачі вводів', 'Автоматичні вимикачі розділяють кола блока: Q1 — ввід мережі, Q2 — вихід PCS шафи накопичення, Q3 — вихід на резервне навантаження. Ними коло відключають для обслуговування, і вони ж захищають кабелі від перевантаження й короткого замикання.', 'Номінали вимикачів визначає Golen під потужність блока; на моделі вони показані схематично.'],
+  sts: ['Статичний перемикач STS', 'STS — перемикач на тиристорах без рухомих контактів. Поки мережа в нормі, він замкнений, і блок працює паралельно з мережею: заряджає батарею, допомагає мережі в пік, живить зарядку.', 'Коли мережа зникає, STS відключає її за час до 20 мс — зарядка й резервне навантаження продовжують працювати від батареї та сонця. Натисніть «Відключення мережі», щоб побачити цей режим.'],
+  dc: ['DC/DC-модулі СЕС', 'Сонячні панелі підключаються до блока постійним струмом — через DC/DC-модулі, без мережевого інвертора. Вхід СЕС — від 60 до 240 кВт, напруга рядків 200–660 В.', 'Енергія сонця йде в батарею і на зарядку напряму, тому СЕС працює і з мережею, і без неї. Кількість модулів підбирається під потужність СЕС; на моделі показано повну конфігурацію.'],
+  ctrl: ['Контролер і зв\'язок', 'Контролер стежить за мережею й керує STS, а система керування розподіляє енергію між сонцем, батареєю, мережею і зарядкою: коли заряджати батарею, коли віддавати, скільки брати з мережі.', 'До EMS E-Systems блок підключається по Modbus TCP або RTU, до платформи зарядки — по OCPP. Оператор бачить стан блока, сесії зарядки й аварії в одному інтерфейсі.'],
+  batt: ['Шафа накопичення 241 кВт·год', 'Головна шафа блока: батарея LFP 241 кВт·год (1P240S) з рідинним охолодженням, PCS на 120 кВт, BMS і пожежогасіння «аерозоль + вода». На дверях — аварійна кнопка, індикатори роботи і ґрати повітрозабору.', 'Батарея дає зарядці потужність, якої немає у вводі: заряджається від сонця вдень і від мережі вночі, а віддає енергію в пік і під час відключень. Двері відкриваються — усередині схематично показані PCS, модулі й охолодження.'],
+  pcs: ['PCS 120 кВт', 'Двонаправлений перетворювач між батареєю і мережею змінного струму 230/400 В. З мережею він працює синхронно, а в автономному режимі сам формує напругу й частоту.', 'Максимальна потужність зарядки за паспортом — 120 кВт і з мережею, і без неї: блок тримає повну потужність зарядки навіть під час відключення. Розміщення PCS у шафі показано схематично.'],
+  mods: ['Батарейні модулі і BMS', 'Батарея 241 кВт·год зібрана з послідовно з\'єднаних комірок LFP — конфігурація 1P240S, режим 0,5C. BMS контролює напругу й температуру кожної комірки.', 'Кількість і розміщення модулів у шафі Golen не публікує, на моделі вони показані схематично.'],
+  cool: ['Охолодження', 'Батарейний відсік охолоджується рідиною, електричний — повітрям, зарядна станція — природною конвекцією. Рідинне охолодження вирівнює температуру комірок, і батарея служить довше.', 'Блок працює від −20 до +55 °C, вище 45 °C — зі зниженням потужності, на висоті до 4000 м. На моделі агрегат охолодження показано внизу, за ґратами дверей, — схематично.'],
+  chg: ['Зарядна станція DC 120 кВт', 'Швидка зарядка постійним струмом: 120 кВт, два пістолети, струм до 400 А, вихідна напруга 150–1000 В. За паспортом станція розрахована на легкові авто, електробуси, вантажівки й спецтехніку.', 'На торці — екран і зчитувач: оплата карткою RFID, банківською карткою або через POS-термінал. Станція підключається до платформи зарядки по OCPP і охолоджується природною конвекцією.'],
+  guns: ['Пістолети і кабелі', 'Два пістолети висять у тримачах на торці станції. Постійну потужність станція видає в діапазоні 300–1000 В, струм — до 400 А.', 'Сумарна потужність станції — 120 кВт: з двома авто вона ділиться між ними. Підключайте й від\'єднуйте авто кнопками «Авто 1» і «Авто 2» — пістолет перейде в роз\'єм авто і назад у тримач.'],
+  pv: ['СЕС на навісі', 'Навіс над місцями зарядки — зручне місце для сонячних панелей: вони дають авто тінь, а блоку — енергію. Блок приймає 60–240 кВт СЕС постійним струмом.', 'Кількість панелей на моделі умовна — потужність СЕС визначає проєкт під площу навісу й даху. Увечері та вночі СЕС не генерує, і зарядку тримають батарея й мережа.'],
+  grid: ['Мережа 0,4 кВ', 'Блок підключається до мережі 3W/N/PE 230/400 В, 50 Гц. Вночі мережа заряджає батарею за нижчим тарифом, а в пік блок бере з неї менше — потужність зарядки добирає батарея.', 'Кнопка «Відключення мережі» імітує аварію: кабель на моделі стає червоним, STS відключає мережу, а зарядка й магазин працюють від батареї.'],
+  shop: ['Резервне навантаження', 'Блок має вихід резервного живлення 220 В і 380 В — для магазину АЗС, кафе чи освітлення стоянки. Поки мережа є, навантаження живиться як звичайно.', 'Під час відключення мережі STS переводить вихід на батарею за час до 20 мс: на моделі магазин залишається освітленим. Що саме підключати до резерву, визначає проєкт.'],
+  cars: ['Електромобілі', 'Один блок обслуговує два місця зарядки. Для АЗС Golen радить два блоки на 4–8 місць, для зарядного хабу — від чотирьох блоків на 8 і більше місць.', 'Натисніть «Авто 1» або «Авто 2»: авто заїде на місце, пістолет перейде в роз\'єм, і на схемі з\'явиться потік енергії до нього.'],
+};
+const ROWS = [ ['skid','1'], ['side','2'], ['brk','2.1',1], ['sts','2.2',1], ['dc','2.3',1], ['ctrl','2.4',1], ['batt','3'], ['pcs','3.1',1], ['mods','3.2',1], ['cool','3.3',1], ['chg','4'], ['guns','5'], ['pv','6'], ['grid','7'], ['shop','8'], ['cars','9'] ];
+const ROW_NAMES = { skid:'Блок на скіді', side:'Бокова шафа: STS і DC/DC', brk:'Вимикачі вводів', sts:'Модуль STS', dc:'DC/DC-модулі СЕС', ctrl:'Контролер і зв\'язок', batt:'Шафа накопичення 241 кВт·год', pcs:'PCS 120 кВт', mods:'Батарейні модулі', cool:'Охолодження', chg:'Зарядна станція 120 кВт', guns:'Пістолети і кабелі', pv:'СЕС на навісі', grid:'Мережа 0,4 кВ', shop:'Резервне навантаження', cars:'Електромобілі' };
+const SIDE_IDS = ['side','brk','sts','dc','ctrl'], MAIN_IDS = ['batt','pcs','mods','cool'];
+const TOD_NAME = { day:'день', eve:'вечірній пік', night:'ніч' };
+
+/* ================= rail, description, status ================= */
+const kvHtml = kv => kv.length ? `<dl class="kv">${kv.map(([k,v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>` : '';
+function actsFor(id){
+  const A = [];
+  if (SIDE_IDS.includes(id)) A.push([S.doorStep === 1 ? 'door-close' : 'door-side', S.doorStep === 1 ? 'Закрити шафу' : 'Відкрити шафу']);
+  if (MAIN_IDS.includes(id)) A.push([S.doorStep === 2 ? 'door-close' : 'door-main', S.doorStep === 2 ? 'Закрити шафу' : 'Відкрити шафу']);
+  if (['sts','grid','shop'].includes(id)) A.push(['out', S.out ? 'Повернути мережу' : 'Відключити мережу']);
+  if (['chg','guns','cars'].includes(id)) [0, 1].forEach(i => A.push(['car' + i, `${S.car[i] ? 'Від\'єднати' : 'Підключити'} авто ${i + 1}`]));
+  if (id === 'pv') [['day','День'],['eve','Вечір'],['night','Ніч']].forEach(([k, l]) => A.push(['tod-' + k, l]));
+  return A;
+}
+function statusText(d){
+  if (!d.grid) return [`Мережі немає: усе працює від батареї${d.pv ? ' і сонця' : ''}`, true];
+  if (S.tod === 'day') return [d.n ? 'День: сонце заряджає авто і батарею' : 'День: сонце заряджає батарею', false];
+  if (S.tod === 'eve') return [d.n ? 'Пік: батарея допомагає заряджати авто' : 'Пік: батарея живить магазин', false];
+  return [d.n ? 'Ніч: мережа заряджає батарею й авто' : 'Ніч: мережа заряджає батарею', false];
+}
+function renderRail(){
+  const partsEl = $('parts'), det = $('detail'), sg = S.sel;
+  partsEl.innerHTML = '';
+  ROWS.forEach(([id, n, sub]) => { const li = document.createElement('li'); li.innerHTML = `<button type="button" class="row${sub ? ' sub' : ''}${sg === id ? ' on' : ''}" data-row="${id}"><span class="k">${n}</span>${ROW_NAMES[id]}</button>`; partsEl.appendChild(li); });
+  const d = derive(), info = INFO[sg], acts = sg ? actsFor(sg) : [];
+  let extra = '';
+  if (sg === 'cars' || sg === 'guns' || sg === 'chg') extra = kvHtml([['Авто 1', d.plug[0] ? 'заряджається' : (S.car[0] ? 'заїжджає' : 'немає')], ['Авто 2', d.plug[1] ? 'заряджається' : (S.car[1] ? 'заїжджає' : 'немає')]]);
+  if (sg === 'batt' || sg === 'mods') extra = kvHtml([['Зараз', d.batt === 'charge' ? 'заряджається' : 'віддає енергію']]);
+  const note = ['brk','sts','dc','ctrl','pcs','mods','cool'].includes(sg) ? '<div class="small">Внутрішнє компонування шаф Golen не публікує — вузли показані схематично.</div>' : (['pv','shop','cars'].includes(sg) ? '<div class="small">Навіс, будівля та автомобілі — умовні предмети сцени.</div>' : '');
+  det.innerHTML = info ? `<h3>${info.name}</h3>${kvHtml(info.kv)}${extra}` + (acts.length ? `<div class="acts">${acts.map(([a,l],i) => `<button type="button" class="btn sm${i===0?' primary':''}" data-act="${a}">${l}</button>`).join('')}</div>` : '') + note
+    : `<h3>LES-241L120-PSC</h3>${kvHtml([['Зарядка','120 кВт, 2 пістолети'],['Накопичувач','241 кВт·год'],['СЕС','60–240 кВт'],['Перехід','до 20 мс'],['Маса','≈ 3,5 т']])}`;
+  const ds = DESC[sg] || DESC.P0;
+  $('descH').textContent = ds[0]; $('descB').innerHTML = ds.slice(1).map(t => `<p>${t}</p>`).join('');
+  const parts = ['<b>LES-241L120-PSC</b>'];
+  if (S.doorStep === 1) parts.push('бокова шафа відкрита'); if (S.doorStep === 2) parts.push('шафа АКБ відкрита');
+  if (sg && ROW_NAMES[sg] && !(sg === 'side' && S.doorStep === 1) && !(sg === 'batt' && S.doorStep === 2)) parts.push(ROW_NAMES[sg]);
+  $('crumb').innerHTML = parts.join(' › ');
+  const [st, bad] = statusText(d);
+  $('sdot').className = bad ? 'dot off' : 'dot'; $('stext').textContent = st;
+  $('bOut').setAttribute('aria-pressed', S.out ? 'true' : 'false'); $('bOut').textContent = S.out ? 'Повернути мережу' : 'Відключення мережі';
+  [0, 1].forEach(i => $('bCar' + (i + 1)).setAttribute('aria-pressed', S.car[i] ? 'true' : 'false'));
+  $('bDoor').textContent = ['Відкрити бокову шафу', 'Відкрити шафу АКБ', 'Закрити шафи'][S.doorStep];
+  [['tDay','day'],['tEve','eve'],['tNight','night']].forEach(([b, t]) => { $(b).classList.toggle('on', S.tod === t); $(b).setAttribute('aria-selected', S.tod === t); });
+  renderSld();
+}
+
+/* ================= energy-flow diagram ================= */
+const ln = (d, cls) => `<path class="ln ${cls}" d="${d}"/>`;
+const bx = (x, y, w, h, t, cls='', sub='') => `<rect class="bx ${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="7"/><text class="b" x="${x + w/2}" y="${y + h/2 + (sub ? -1 : 5)}" text-anchor="middle">${t}</text>` + (sub ? `<text class="m" x="${x + w/2}" y="${y + h/2 + 14}" text-anchor="middle">${sub}</text>` : '');
+const srcBox = (id, x, y, w, h, t, cls, sub, aria) => `<g class="sw" data-sw="${id}" tabindex="0" role="button" aria-label="${aria}"><rect class="hit" x="${x - 4}" y="${y - 4}" width="${w + 8}" height="${h + 8}" rx="9"/>${bx(x, y, w, h, t, cls, sub)}</g>`;
+const stsBox = (x, y, closed) => `<rect class="bx ${closed ? 'hot' : 'bad'}" x="${x}" y="${y}" width="96" height="44" rx="7"/><text class="b" x="${x + 48}" y="${y + 15}" text-anchor="middle">STS</text><path class="stsb${closed ? '' : ' open'}" d="M${x + 24} ${y + 30} L${closed ? x + 72 : x + 66} ${closed ? y + 30 : y + 20}"/><circle class="tm" cx="${x + 24}" cy="${y + 30}" r="3"/><circle class="tm" cx="${x + 72}" cy="${y + 30}" r="3"/>`;
+function renderSld(){
+  const d = derive(); let s = '';
+  s += ln('M134 70 H226', d.grid ? (d.gridFlow ? 'on' : 'live') : 'dead');
+  s += ln('M134 150 H226', d.pv ? 'on' : '');
+  s += ln('M226 230 H134', 'on');
+  s += ln('M462 230 H500 V192 H544', d.plug[0] ? 'on' : '') + ln('M462 230 H500 V258 H544', d.plug[1] ? 'on' : '');
+  s += `<rect class="bx blk" x="206" y="20" width="276" height="264" rx="12"/><text class="m" x="344" y="38" text-anchor="middle">блок PSC · EMS</text>`;
+  s += srcBox('grid', 16, 46, 118, 48, 'Мережа', d.grid ? '' : 'bad', d.grid ? '0,4 кВ · є' : 'аварія', 'Мережа: натисніть, щоб імітувати відключення');
+  s += bx(16, 126, 118, 48, 'СЕС', d.pv ? 'hot' : 'mute', d.pv ? 'генерує' : 'немає сонця');
+  s += bx(16, 206, 118, 48, 'Магазин', 'hot', d.grid ? 'від мережі' : 'від батареї');
+  s += stsBox(226, 48, d.grid) + `<text class="m" x="274" y="108" text-anchor="middle">${d.grid ? 'замкнений' : 'розімкнений'}</text>`;
+  s += bx(226, 128, 96, 44, 'DC/DC', d.pv ? 'hot' : 'mute', d.pv ? 'СЕС → DC' : 'очікує');
+  s += bx(226, 208, 96, 44, 'Резерв', 'hot', '220/380 В');
+  s += bx(366, 48, 96, 44, 'АКБ', 'hot', d.batt === 'charge' ? 'заряд' : 'розряд');
+  s += bx(366, 128, 96, 44, 'PCS', 'hot', d.grid ? 'з мережею' : 'автономно');
+  s += bx(366, 208, 96, 44, 'Зарядка', d.n ? 'hot' : '', d.n ? (d.n === 2 ? '2 авто' : '1 авто') : 'вільна');
+  s += srcBox('car0', 544, 170, 128, 44, 'Авто 1', d.plug[0] ? 'hot' : 'mute', d.plug[0] ? 'заряджається' : (S.car[0] ? 'заїжджає' : 'підключити'), 'Авто 1: натисніть, щоб підключити або від\'єднати');
+  s += srcBox('car1', 544, 236, 128, 44, 'Авто 2', d.plug[1] ? 'hot' : 'mute', d.plug[1] ? 'заряджається' : (S.car[1] ? 'заїжджає' : 'підключити'), 'Авто 2: натисніть, щоб підключити або від\'єднати');
+  $('sld').innerHTML = `<svg viewBox="0 0 690 300" role="img" aria-label="Схема потоків енергії поточного режиму">${s}</svg>`;
+  $('sldTag').textContent = d.grid ? TOD_NAME[S.tod] : 'автономно';
+}
+function toggleSw(id){ if (id === 'grid') S.out = !S.out; else if (id === 'car0') S.car[0] = !S.car[0]; else if (id === 'car1') S.car[1] = !S.car[1]; renderRail(); }
+$('sld').addEventListener('click', e => { const g = e.target.closest('[data-sw]'); if (g) toggleSw(g.dataset.sw); });
+$('sld').addEventListener('keydown', e => { if (e.key !== 'Enter' && e.key !== ' ') return; const g = e.target.closest('[data-sw]'); if (!g) return; e.preventDefault(); const id = g.dataset.sw; toggleSw(id); const n = $('sld').querySelector(`[data-sw="${id}"]`); if (n) n.focus(); });
+
+/* ================= camera ================= */
+let camTween = null;
+function flyTo(pos, tgt, dur=0.9){ camTween = { p0:camera.position.clone(), t0:controls.target.clone(), p1:pos.clone(), t1:tgt.clone(), t:0, dur: reduceMotion ? 0.001 : dur }; }
+const kAspect = () => Math.min(1.9, Math.max(1, 1.52 / camera.aspect));
+function flyFocus(tgt, off){ flyTo(tgt.clone().add(off.clone().multiplyScalar(kAspect())), tgt); }
+const CAM = {
+  a:    { tgt:V(1.4, 1.15, 0.5), off:V(-4.6, 3.0, 10.8) },
+  side: { tgt:V(SIDE_X + 0.05, 1.3, FZ - 0.35), off:V(1.05, 0.5, 4.4) },
+  batt: { tgt:V(MAIN_X, 1.25, FZ - 0.45), off:V(1.1, 0.5, 4.8) },
+};
+const go = name => flyFocus(CAM[name].tgt, CAM[name].off);
+const FOCUS = {
+  skid: [V(0, 1.35, 0), V(-2.4, 1.5, 5.4)],
+  chg: [V(CH_X + 0.32, 1.0, 0.2), V(1.05, 0.75, 3.4), true],
+  guns: [V(2.0, 0.8, 1.6), V(-0.7, 1.4, 4.2)],
+  pv: [V(4.7, 2.0, 0.6), V(-2.8, 2.6, 9.0)],
+  grid: [V(-2.2, 2.9, -2.6), V(1.6, 0.6, 10.5)],
+  shop: [V(-4.4, 1.5, 1.4), V(2.8, 1.2, 8.2)],
+  cars: [V(4.7, 0.8, 1.4), V(-1.0, 2.4, 7.6)],
+};
+function focusInner(id){
+  const T = { brk:[innerS, V(0, 1.66, -0.2)], sts:[innerS, V(0, 1.14, -0.1)], ctrl:[innerS, V(0, 2.02, -0.2)], dc:[innerS, V(0, 0.5, 0.15)], pcs:[innerM, V(0, 1.98, 0.1)], mods:[innerM, V(0, 1.1, 0.2)], cool:[innerM, V(0, 0.32, 0.2)] }[id];
+  T[0].updateWorldMatrix(true, false);
+  const w = T[0].localToWorld(T[1].clone());
+  flyFocus(w, id === 'dc' ? V(0.55, 0.85, 2.0) : (MAIN_IDS.includes(id) ? V(0.65, 0.4, 2.9) : V(0.5, 0.35, 2.1)));
+}
+function setCamNow(c){ camera.position.copy(c.tgt.clone().add(c.off.clone().multiplyScalar(kAspect()))); controls.target.copy(c.tgt); controls.update(); }
+
+/* ================= actions & selection ================= */
+function setDoorStep(n){ S.doorStep = n; }
+function setTod(t){
+  S.tod = t;
+  const P = { day:{ sun:1.6, col:0xffffff, pos:[4, 8, 6], hemi:0.6, hs:0xffffff, fill:0.5, front:0.35, exp:1.05, env:1 },
+              eve:{ sun:1.0, col:0xFFB27A, pos:[-7, 2.4, 4], hemi:0.38, hs:0xFFD8B8, fill:0.25, front:0.25, exp:1.0, env:0.7 },
+              night:{ sun:0.06, col:0x8FA8C8, pos:[3, 8, -4], hemi:0.07, hs:0x9FB4CC, fill:0.05, front:0.06, exp:0.85, env:0.12 } }[t];
+  sun.intensity = P.sun; sun.color.set(P.col); sun.position.set(...P.pos); hemi.intensity = P.hemi; hemi.color.set(P.hs); fill.intensity = P.fill; frontL.intensity = P.front; renderer.toneMappingExposure = P.exp;
+  scene.traverse(o => { if (o.isMesh && o.material && 'envMapIntensity' in o.material) o.material.envMapIntensity = P.env; });
+  stage.classList.toggle('eve', t === 'eve'); stage.classList.toggle('night', t === 'night');
+  renderRail();
+}
+function act(a){
+  if (a.startsWith('tod-')){ setTod(a.slice(4)); return; }
+  switch (a){
+    case 'door-side': setDoorStep(1); go('side'); break;
+    case 'door-main': setDoorStep(2); go('batt'); break;
+    case 'door-close': setDoorStep(0); go('a'); break;
+    case 'out': S.out = !S.out; break;
+    case 'car0': S.car[0] = !S.car[0]; break;
+    case 'car1': S.car[1] = !S.car[1]; break;
+  }
+  renderRail();
+}
+function selectRow(id){
+  S.sel = id;
+  if (id === 'side'){ setDoorStep(1); go('side'); }
+  else if (id === 'batt'){ setDoorStep(2); go('batt'); }
+  else if (SIDE_IDS.includes(id)){ setDoorStep(1); focusInner(id); }
+  else if (MAIN_IDS.includes(id)){ setDoorStep(2); focusInner(id); }
+  else if (FOCUS[id]){ const [t, o, fixed] = FOCUS[id]; if (fixed) flyTo(t.clone().add(o), t); else flyFocus(t, o); }
+  renderRail();
+}
+$('parts').addEventListener('click', e => { const b = e.target.closest('button[data-row]'); if (b) selectRow(b.dataset.row); });
+$('detail').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) act(b.dataset.act); });
+$('bOut').addEventListener('click', () => act('out'));
+$('bCar1').addEventListener('click', () => act('car0'));
+$('bCar2').addEventListener('click', () => act('car1'));
+$('bDoor').addEventListener('click', () => { const n = (S.doorStep + 1) % 3; S.sel = n === 1 ? 'side' : (n === 2 ? 'batt' : null); setDoorStep(n); go(n === 1 ? 'side' : (n === 2 ? 'batt' : 'a')); renderRail(); });
+function setSpin(on){ controls.autoRotate = on; $('bSpin').setAttribute('aria-pressed', on); }
+$('bSpin').addEventListener('click', () => setSpin(!controls.autoRotate));
+$('bReset').addEventListener('click', () => { setDoorStep(0); S.out = false; S.car = [true, false]; S.sel = null; setTod('day'); go('a'); renderRail(); });
+$('tDay').addEventListener('click', () => setTod('day'));
+$('tEve').addEventListener('click', () => setTod('eve'));
+$('tNight').addEventListener('click', () => setTod('night'));
+
+/* ================= picking & hover ================= */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function hitAt(cx, cy){
+  const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  return ray.intersectObjects(PICK, false).find(h => { let p = h.object; while (p){ if (!p.visible) return false; p = p.parent; } return true; }) || null;
+}
+function onPick(h){ if (!h) return; const id = h.object.userData.part; if (id) selectRow(id); }
+const hintDefault = 'Натисніть на обладнання або номер · потягніть, щоб обертати';
+let down = null, moveQueued = null, interacted = false;
+function setHint(id){ const h = $('hint'); const n = id ? ROWS.find(r => r[0] === id) : null; if (n){ h.textContent = `${n[1]} · ${ROW_NAMES[n[0]]}`; h.style.opacity = 1; } else { h.textContent = hintDefault; h.style.opacity = interacted ? 0 : 1; } }
+canvas.addEventListener('pointerdown', e => { down = { x:e.clientX, y:e.clientY }; interacted = true; setSpin(false); });
+canvas.addEventListener('pointerup', e => { if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6) onPick(hitAt(e.clientX, e.clientY)); down = null; });
+canvas.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') return; moveQueued = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointerleave', () => { S.hover = null; canvas.classList.remove('hot'); setHint(null); });
+controls.addEventListener('start', () => { camTween = null; });
+
+/* ================= loop ================= */
+function resize(){ const r = stage.getBoundingClientRect(); const w = Math.max(1, r.width), h = Math.max(1, r.height); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+setCamNow(CAM.a);
+const approach = (v, t, rate, dt) => Math.abs(t - v) < 0.0005 ? t : v + (t - v) * Math.min(1, dt * rate);
+const lin = (v, t, step) => v < t ? Math.min(t, v + step) : Math.max(t, v - step);
+const clock = new THREE.Clock(); let started = false;
+function frame(){
+  const dt = Math.min(0.05, clock.getDelta()), time = clock.elapsedTime, R = reduceMotion ? 60 : 3.2;
+  if (camTween){ camTween.t += dt / camTween.dur; const k = ease(Math.min(1, camTween.t)); camera.position.lerpVectors(camTween.p0, camTween.p1, k); controls.target.lerpVectors(camTween.t0, camTween.t1, k); if (camTween.t >= 1) camTween = null; }
+  S.doorST = approach(S.doorST, S.doorStep === 1 ? 1 : 0, R * 0.8, dt); S.doorMT = approach(S.doorMT, S.doorStep === 2 ? 1 : 0, R * 0.8, dt);
+  const prev = [plugged(0), plugged(1)];
+  [0, 1].forEach(i => { S.carT[i] = reduceMotion ? (S.car[i] ? 1 : 0) : lin(S.carT[i], S.car[i] ? 1 : 0, dt / 1.6); });
+  apply(dt);
+  if (prev[0] !== plugged(0) || prev[1] !== plugged(1)) renderRail();
+  if (!reduceMotion) STS.fans.forEach(f => f.rotation.y += dt * 18);
+  if (moveQueued && !camTween){ const h = hitAt(moveQueued[0], moveQueued[1]); const id = h ? h.object.userData.part : null; if (id !== S.hover){ S.hover = id; canvas.classList.toggle('hot', !!id); setHint(id); } moveQueued = null; }
+  moveFlows(time);
+  controls.update(); renderer.render(scene, camera);
+  if (!started){ started = true; $('loading').hidden = true; }
+}
+renderRail();
+setSpin(false); renderer.setAnimationLoop(frame);
+</script>
