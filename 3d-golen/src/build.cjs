@@ -60,6 +60,10 @@ let out = html.slice(0, a + '<script>'.length) + js + html.slice(b);
 const PIN_CSS = '<style id="golen-pins">.pin:not(.active):not(:hover) .t{opacity:0!important}.pin .t{pointer-events:none}</style>';
 out = out.replace('</head>', PIN_CSS + '</head>');
 out = out.replace(/<title>[^<]*<\/title>/, '<title>3D-моделі Golen</title>');
+// the error banner must not fire on the browser's benign "ResizeObserver loop …" notice
+const GUARD_AT = "window.addEventListener('error',function(e){show(";
+if (out.split(GUARD_AT).length !== 2) throw new Error('error-banner hook not found');
+out = out.replace(GUARD_AT, "window.addEventListener('error',function(e){if(/ResizeObserver loop/.test(e.message||''))return;show(");
 if (/Bluesun/.test(js.replace(/\(Bluesun\|Elecnova\|Golen\)/, ''))) {
   const left = [...js.matchAll(/.{40}Bluesun.{40}/g)].map(m => m[0]);
   console.warn('WARNING: Bluesun still in engine text:', left.slice(0, 5));
