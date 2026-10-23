@@ -1,6 +1,6 @@
 // Golen catalog: collects the product configs and builds the list for the models panel.
 const { BRAND, fmt } = require('./lib.cjs');
-const P = { ...require('./cabinets.cjs'), ...require('./h20.cjs'), ...require('./containers.cjs'), ...require('./pcs.cjs') };
+const P = { ...require('./cabinets.cjs'), ...require('./h20.cjs'), ...require('./containers.cjs'), ...require('./pcs.cjs'), ...require('./ev.cjs') };
 const LINKS = require('./links.cjs');
 
 const ORDER = Object.keys(P).sort((a, b) => (P[a].order ?? 99) - (P[b].order ?? 99));
